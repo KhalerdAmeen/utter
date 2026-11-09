@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Utter — talk in any Mac app, get clean text</title>
+<meta name="description" content="Hold a key in any Mac app and talk. Utter removes the ums, keeps what you meant, and types it where your cursor is. Free.">
+<meta name="theme-color" content="#121214">
+<link rel="icon" type="image/png" href="assets/utter-icon-256.png">
+<link rel="apple-touch-icon" href="assets/utter-icon-256.png">
+<meta property="og:image" content="assets/utter-icon-256.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#121214; --raise:#18181b; --raise2:#1f1f23;
+    --line:rgba(244,239,232,.07); --line2:rgba(244,239,232,.13);
+    --text:#F4EFE8; --muted:#9d9891; --faint:#66625c;
+    --orange:#FF6129; --red:#FF453A; --green:#3DD07A;
+    --serif:"Instrument Serif",ui-serif,Georgia,serif;
+    --sans:"Geist",ui-sans-serif,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+  body{background:var(--ink);color:var(--text);font-family:var(--sans);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:inherit}
+  img{display:block}
+  :focus-visible{outline:2px solid var(--orange);outline-offset:3px;border-radius:6px}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 28px}
+
+  /* nav */
+  nav{position:sticky;top:0;z-index:10;background:rgba(18,18,20,.72);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:500;font-size:16px;text-decoration:none}
+  .brand img{width:26px;height:26px}
+  .navlinks{display:flex;align-items:center;gap:30px;font-size:14.5px;color:var(--muted)}
+  .navlinks a{text-decoration:none;transition:color .15s}
+  .navlinks a:hover{color:var(--text)}
+
+  .btn{display:inline-flex;align-items:center;gap:9px;background:var(--orange);color:#1a0a03;font-weight:500;text-decoration:none;border-radius:999px;padding:14px 24px;font-size:15.5px;transition:background .15s ease, box-shadow .15s ease;box-shadow:0 0 0 1px rgba(255,255,255,.08) inset, 0 10px 30px -10px rgba(255,97,41,.6)}
+  .btn:hover{background:#ff7442}
+  .btn.sm{padding:8px 15px;font-size:13.5px;box-shadow:none}
+  .btn.ghost{background:transparent;color:var(--text);box-shadow:0 0 0 1px var(--line2) inset}
+  .btn.ghost:hover{background:rgba(255,255,255,.04)}
+
+  /* hero */
+  .hero{position:relative;padding:72px 0 0;text-align:center}
+  .hero::before{content:"";position:absolute;inset:-120px 0 auto;height:720px;background:radial-gradient(50% 45% at 50% 30%,rgba(255,97,41,.16),transparent 70%);pointer-events:none}
+  .appicon{position:relative;width:120px;height:120px;margin:0 auto 38px}
+  .appicon::after{content:"";position:absolute;inset:18%;border-radius:30%;background:var(--orange);filter:blur(42px);opacity:.42;z-index:-1}
+  .appicon img{width:100%;height:100%}
+  h1,h2{font-family:var(--serif);font-weight:400;letter-spacing:-.015em}
+  h1{font-size:clamp(52px,8.6vw,108px);line-height:.98;max-width:12ch;margin:0 auto}
+  h1 .soft{color:var(--faint);display:block}
+  .lede{font-size:clamp(17px,1.9vw,19px);color:var(--muted);max-width:31em;margin:26px auto 0}
+  .cta-row{margin-top:36px;display:flex;flex-direction:column;align-items:center;gap:14px}
+  .fine{font-size:13.5px;color:var(--faint)}
+
+  /* demo */
+  .stage{margin:84px auto 0;max-width:760px;position:relative;padding-bottom:30px}
+  .window{background:linear-gradient(180deg,var(--raise2),var(--raise));border-radius:18px;overflow:hidden;text-align:left;box-shadow:0 0 0 1px var(--line2), 0 50px 120px -50px rgba(255,97,41,.35), 0 30px 60px -30px rgba(0,0,0,.6)}
+  .chrome{display:flex;align-items:center;gap:7px;padding:14px 16px}
+  .chrome i{width:10px;height:10px;border-radius:50%;background:#34343a;display:block}
+  .chrome span{margin:0 auto;font-size:12.5px;color:var(--faint);padding-right:44px}
+  .thread{padding:14px 26px 8px;display:flex;flex-direction:column;gap:10px;min-height:200px}
+  .bubble{align-self:flex-start;background:#26262b;border-radius:18px 18px 18px 5px;padding:10px 15px;font-size:15px;max-width:80%}
+  .bubble.me{align-self:flex-end;background:var(--orange);color:#1a0a03;border-radius:18px 18px 5px 18px}
+  .composer{margin:8px 18px 18px;background:rgba(255,255,255,.035);border-radius:12px;padding:13px 16px;font-size:15.5px;min-height:50px;display:flex;align-items:center}
+  .composer .ph{color:var(--faint)}
+  .caret{display:inline-block;width:2px;height:1.1em;background:var(--orange);margin-left:1px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .raw{position:absolute;left:50%;transform:translateX(-50%);bottom:132px;width:min(90%,560px);background:rgba(14,14,16,.92);backdrop-filter:blur(8px);border-radius:12px;box-shadow:0 0 0 1px var(--line2);padding:12px 16px;font-size:14.5px;color:var(--muted);opacity:0;transition:opacity .35s ease;text-align:left}
+  .raw small{display:block;color:var(--faint);font-size:12px;margin-bottom:3px}
+  .raw del{color:var(--red);text-decoration-thickness:1.5px;opacity:.8}
+  .raw.on{opacity:1}
+
+  .pill{display:inline-flex;align-items:center;gap:11px;height:42px;padding:0 17px;background:#0c0c0e;border-radius:999px;box-shadow:0 0 0 1px rgba(255,255,255,.11), 0 16px 40px rgba(0,0,0,.5);font-size:13.5px;font-weight:500;color:#fff;white-space:nowrap}
+  .stage .pill{position:absolute;left:50%;bottom:8px;transform:translate(-50%,8px) scale(.96);opacity:0;transition:opacity .25s ease, transform .3s cubic-bezier(.2,.9,.3,1.2)}
+  .stage .pill.on{opacity:1;transform:translate(-50%,0) scale(1)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--red);animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.35}}
+  .wave{display:flex;align-items:center;gap:2.5px;height:22px}
+  .wave span{width:2.5px;border-radius:2px;background:#fff;height:4px;transition:height .09s linear}
+  .time{font-variant-numeric:tabular-nums;color:rgba(255,255,255,.5);font-size:12.5px}
+  .thinking{display:flex;gap:4px}
+  .thinking span{width:5px;height:5px;border-radius:50%;background:#fff;animation:think 1s ease-in-out infinite}
+  .thinking span:nth-child(2){animation-delay:.15s}.thinking span:nth-child(3){animation-delay:.3s}
+  @keyframes think{0%,100%{opacity:.25}50%{opacity:1}}
+  .check{color:var(--green)}
+  .pill [data-mode]{display:none;align-items:center;gap:10px}
+  .pill[data-state="listening"] [data-mode="listening"],
+  .pill[data-state="processing"] [data-mode="processing"],
+  .pill[data-state="done"] [data-mode="done"]{display:flex}
+
+  /* sections */
+  section{padding:150px 0 0}
+  h2{font-size:clamp(40px,5.4vw,64px);line-height:1.02;max-width:16ch}
+  .sub{color:var(--muted);font-size:17.5px;max-width:34em;margin-top:18px}
+  .center{text-align:center}
+  .center h2,.center .sub{margin-left:auto;margin-right:auto}
+
+  /* how it works: one horizontal sequence */
+  .seq{margin-top:72px;position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+  .track{position:absolute;left:16.66%;right:16.66%;top:110px;height:1px;background:var(--line2);z-index:0}
+  .track i{position:absolute;inset:0 auto 0 0;width:0;background:linear-gradient(90deg,var(--orange),#ff9a6b);box-shadow:0 0 12px rgba(255,97,41,.7);transition:width 1.1s cubic-bezier(.6,0,.2,1)}
+  .frame{text-align:center}
+  .vis{height:220px;display:flex;align-items:center;justify-content:center;position:relative}
+  .vis::before{content:"";position:absolute;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle,rgba(255,97,41,.0),transparent 70%);transition:background .6s ease}
+  .frame.active .vis::before{background:radial-gradient(circle,rgba(255,97,41,.14),transparent 70%)}
+  .frame h3{font-family:var(--serif);font-weight:400;font-size:30px;line-height:1.1;margin-top:14px}
+  .frame p{color:var(--muted);font-size:15.5px;margin:8px auto 0;max-width:22em}
+  .frame{position:relative;z-index:1}
+  .frame .vis>*{filter:brightness(.55) saturate(.5);transition:filter .5s ease}
+  .frame h3,.frame p{transition:color .5s ease}
+  .frame:not(.active):not(.done) h3{color:var(--faint)}
+  .frame:not(.active):not(.done) p{color:#4d4a45}
+  .frame.active .vis>*,.frame.done .vis>*{filter:none}
+
+  .key{position:relative;width:132px;height:112px;border-radius:20px;background:linear-gradient(180deg,#2a2a30,#1c1c20);box-shadow:0 0 0 1px rgba(255,255,255,.09) inset, 0 -2px 0 rgba(0,0,0,.4) inset, 0 9px 0 #0c0c0e, 0 22px 40px -10px rgba(0,0,0,.7);display:flex;flex-direction:column;justify-content:space-between;padding:14px 16px;text-align:left;transition:transform .18s ease, box-shadow .18s ease}
+  .key b{font-weight:400;font-size:22px;color:#fff;line-height:1}
+  .key span{font-size:13px;color:var(--muted)}
+  .key.down{transform:translateY(7px);box-shadow:0 0 0 1px rgba(255,97,41,.55) inset, 0 -2px 0 rgba(0,0,0,.4) inset, 0 2px 0 #0c0c0e, 0 12px 30px -10px rgba(255,97,41,.55)}
+
+  .field{width:250px;background:#1f1f23;border-radius:14px;box-shadow:0 0 0 1px var(--line2);padding:16px 16px 14px;text-align:left;font-size:14.5px;line-height:1.45;min-height:96px;position:relative}
+  .field .chip{position:absolute;right:10px;bottom:-14px;display:inline-flex;align-items:center;gap:6px;background:#0c0c0e;border-radius:999px;padding:5px 11px;font-size:12px;box-shadow:0 0 0 1px rgba(255,255,255,.11);opacity:0;transform:translateY(4px);transition:opacity .3s, transform .3s}
+  .field .chip.on{opacity:1;transform:none}
+
+  /* app tone */
+  .tone{margin-top:56px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{appearance:none;background:none;border:0;color:var(--muted);font:inherit;font-size:15px;padding:9px 16px;border-radius:999px;cursor:pointer;transition:color .15s, background .15s}
+  .tab:hover{color:var(--text)}
+  .tab[aria-selected="true"]{color:var(--text);background:rgba(255,255,255,.07)}
+  .panel{margin-top:22px;display:grid;grid-template-columns:1fr 1fr;gap:0;border-radius:18px;background:var(--raise);box-shadow:0 0 0 1px var(--line)}
+  .said,.got{padding:28px 30px}
+  .said{color:var(--muted);font-size:15.5px;border-right:1px solid var(--line)}
+  .lbl{display:block;font-size:12.5px;color:var(--faint);margin-bottom:10px}
+  .got .lbl{color:var(--orange)}
+  .got span:last-child{font-family:var(--serif);font-size:24px;line-height:1.3;white-space:pre-line;display:block}
+  .got code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:17px;color:#ffb08f}
+  .sel{background:rgba(255,97,41,.25);border-radius:3px;padding:0 2px;color:var(--text)}
+
+  /* features */
+  .feats{margin-top:64px;display:grid;grid-template-columns:repeat(3,1fr);column-gap:48px;row-gap:52px}
+  .feat h3{font-size:16.5px;font-weight:500}
+  .feat p{color:var(--muted);font-size:15.5px;margin-top:6px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+  .chips span{font-size:12.5px;background:rgba(255,255,255,.06);border-radius:999px;padding:4px 11px}
+  .seg{display:inline-flex;margin-top:14px;background:rgba(255,255,255,.05);border-radius:999px;padding:3px;font-size:12.5px}
+  .seg span{padding:4px 11px;border-radius:999px;color:var(--muted)}
+  .seg span.on{background:rgba(255,255,255,.1);color:var(--text)}
+
+  /* faq */
+  .faq{margin-top:48px;max-width:720px}
+  details{border-top:1px solid var(--line)}
+  details:last-child{border-bottom:1px solid var(--line)}
+  summary{list-style:none;cursor:pointer;padding:22px 40px 22px 0;font-size:17px;font-weight:500;position:relative}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:22px;font-weight:400;color:var(--muted);transition:transform .2s ease}
+  details[open] summary::after{transform:translateY(-50%) rotate(45deg)}
+  details p{color:var(--muted);padding:0 0 24px;max-width:38em;font-size:15.5px}
+
+  /* closing */
+  .closing{padding:170px 0 140px;text-align:center;position:relative}
+  .closing::before{content:"";position:absolute;inset:auto 0 0;height:520px;background:radial-gradient(45% 55% at 50% 100%,rgba(255,97,41,.14),transparent 70%);pointer-events:none}
+  .closing .appicon{width:88px;height:88px;margin-bottom:30px}
+  .closing h2{margin:0 auto;max-width:14ch}
+  footer{padding:30px 0 36px;font-size:13.5px;color:var(--faint)}
+  footer .wrap{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+  footer .brand{font-size:14px;color:var(--muted)}
+  footer .brand img{width:20px;height:20px}
+
+  @media (max-width:860px){
+    .feats{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (max-width:760px){
+    body{font-size:16px}
+    .wrap{padding:0 20px}
+    .navlinks a:not(.btn){display:none}
+    .hero{padding-top:52px}
+    .appicon{width:96px;height:96px;margin-bottom:30px}
+    .stage{margin-top:60px}
+    .thread{padding:10px 14px 6px;min-height:220px}
+    .bubble{font-size:14px}
+    .raw{bottom:124px;font-size:13.5px}
+    section{padding-top:110px}
+    .seq{grid-template-columns:1fr;gap:56px;margin-top:56px}
+    .track{display:none}
+    .vis{height:180px}
+    .panel{grid-template-columns:1fr}
+    .said{border-right:0;border-bottom:1px solid var(--line)}
+    .said,.got{padding:22px}
+    .got span:last-child{font-size:21px}
+    .feats{grid-template-columns:1fr;row-gap:36px}
+    .closing{padding:120px 0 100px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  }
+</style>
+</head>
+<body>
+
+<nav aria-label="Main">
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="assets/utter-icon-256.png" alt="" width="26" height="26">Utter</a>
+    <div class="navlinks">
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#setup">Setup</a>
+      <a class="btn sm" href="https://github.com/KhalerdAmeen/utter/releases/latest/download/Utter.dmg">Download</a>
+    </div>
+  </div>
+</nav>
+
+<main id="top">
+  <header class="hero">
+    <div class="wrap">
+      <div class="appicon"><img src="assets/utter-icon-256.png" alt="Utter app icon" width="120" height="120"></div>
+      <h1>Say it messy. <span class="soft">Send it clean.</span></h1>
+      <p class="lede">Hold a key in any Mac app and talk. Utter drops the ums, keeps what you meant, and types it right where your cursor is.</p>
+      <div class="cta-row">
+        <a class="btn" href="https://github.com/KhalerdAmeen/utter/releases/latest/download/Utter.dmg">
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 10.5l5 5 5-5"/><path d="M5 20h14"/></svg>
+          Download for Mac
+        </a>
+        <span class="fine">Free · macOS 13 or later · Apple Silicon and Intel · Notarized by Apple</span>
+      </div>
+
+      <div class="stage" aria-label="Demo: speaking a message and Utter typing the cleaned version">
+        <div class="window">
+          <div class="chrome"><i></i><i></i><i></i><span>Bash</span></div>
+          <div class="thread">
+            <div class="bubble">Are you free to sync on the launch tonight?</div>
+            <div class="bubble me" id="sent" hidden></div>
+          </div>
+          <div class="composer"><span class="ph" id="ph">iMessage</span><span id="typed"></span><span class="caret"></span></div>
+        </div>
+        <div class="raw" id="raw"><small>What you said</small><del>um so</del> can I <del>call Bash? no no,</del> <del>just</del> text you after 8 <del>uh</del> instead</div>
+        <div class="pill" id="pill" data-state="listening" role="status" aria-live="polite">
+          <div data-mode="listening"><span class="dot"></span><span class="wave" id="wave"></span><span class="time" id="time">0:00</span></div>
+          <div data-mode="processing"><span class="thinking"><span></span><span></span><span></span></span>Polishing</div>
+          <div data-mode="done"><span class="check">✓</span>Pasted</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="how" class="center">
+    <div class="wrap">
+      <h2>Hold, talk, let go.</h2>
+      <p class="sub">There’s nothing to learn. It works in whatever app you’re already in.</p>
+
+      <div class="seq" id="seq">
+        <div class="track" aria-hidden="true"><i id="trackfill"></i></div>
+        <div class="frame" data-i="0">
+          <div class="vis"><div class="key" id="key"><b>⌥</b><span>option</span></div></div>
+          <h3>Hold Right Option</h3>
+          <p>In any text box. Or tap it once to go hands-free.</p>
+        </div>
+        <div class="frame" data-i="1">
+          <div class="vis">
+            <div class="pill" id="pill2" data-state="listening">
+              <div data-mode="listening"><span class="dot"></span><span class="wave" id="wave2"></span><span class="time">0:04</span></div>
+            </div>
+          </div>
+          <h3>Talk normally</h3>
+          <p>Ramble, pause, change your mind. It keeps up.</p>
+        </div>
+        <div class="frame" data-i="2">
+          <div class="vis">
+            <div class="field"><span id="typed2"></span><span class="caret"></span><span class="chip" id="chip2"><span class="check">✓</span>Pasted</span></div>
+          </div>
+          <h3>Let go. It’s typed.</h3>
+          <p>Clean text lands at your cursor, and stays on your clipboard.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="apps">
+    <div class="wrap">
+      <h2>The right tone for every app.</h2>
+      <p class="sub">Prompts for your coding agent stay precise, chats stay casual, emails get proper paragraphs. Pick Formal, Casual or Very casual for each kind of app.</p>
+
+      <div class="tone">
+        <div class="tabs" role="tablist" aria-label="Examples by app">
+          <button class="tab" role="tab" aria-selected="true" aria-controls="tone-panel" data-k="code">Coding agent</button>
+          <button class="tab" role="tab" aria-selected="false" aria-controls="tone-panel" data-k="chat">Chat</button>
+          <button class="tab" role="tab" aria-selected="false" aria-controls="tone-panel" data-k="mail">Email</button>
+          <button class="tab" role="tab" aria-selected="false" aria-controls="tone-panel" data-k="cmd">Command mode</button>
+        </div>
+        <div class="panel" id="tone-panel" role="tabpanel" aria-live="polite">
+          <div class="said"><span class="lbl" id="said-label">What you said</span><span id="said"></span></div>
+          <div class="got"><span class="lbl" id="got-label">What Utter typed</span><span id="got"></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="wrap">
+      <h2>Built for people who think out loud.</h2>
+      <div class="feats">
+        <div class="feat"><h3>Works in every app</h3><p>Claude, Cursor, Slack, Notion, Mail, your browser. Anywhere you can type.</p></div>
+        <div class="feat"><h3>Cleans up as it goes</h3><p>Fillers, stutters and false starts disappear. Punctuation and grammar are fixed.</p></div>
+        <div class="feat"><h3>Hears you change your mind</h3><p>Say “at 3, no, make it 4” and only the 4 makes it to the page.</p></div>
+        <div class="feat"><h3>Command mode</h3><p>Highlight text, hold Shift and the key, and say “make this shorter” or “translate to Arabic”. It rewrites in place.</p></div>
+        <div class="feat"><h3>Snippets</h3><p>Say “my calendly” or “my address” and the full text drops in.</p></div>
+        <div class="feat"><h3>Your style, per app</h3><p>Set how formal it writes for messages, email and work tools.</p><div class="seg" aria-hidden="true"><span>Formal</span><span class="on">Casual</span><span>Very casual</span></div></div>
+        <div class="feat"><h3>Names spelled right</h3><p>Teach it names and jargon, add a misheard word straight from History, and it reads the text box you’re in to get names already there right.</p><div class="chips" aria-hidden="true"><span>Khadstudio</span><span>Supabase</span><span>Bash</span></div></div>
+        <div class="feat"><h3>Never loses a dictation</h3><p>Audio is saved before anything goes online. If the connection drops, it retries when you’re back. Back up everything to one file.</p></div>
+        <div class="feat"><h3>Free to run, your models</h3><p>Bring a free Groq API key, kept in your Mac’s Keychain. Switch speech and writing models in Settings.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="setup">
+    <div class="wrap">
+      <h2>Setup</h2>
+      <div class="faq">
+        <details open>
+          <summary>Is it safe to install?</summary>
+          <p>Yes. Utter is signed with an Apple Developer ID and notarized by Apple, so it opens like any other app. Drag it to Applications and double-click.</p>
+        </details>
+        <details>
+          <summary>Where do I get an API key?</summary>
+          <p>Create a free key at <a href="https://console.groq.com/keys" rel="noopener">console.groq.com/keys</a>. No card needed. Paste it into Utter’s Settings.</p>
+        </details>
+        <details>
+          <summary>Which permissions does it need?</summary>
+          <p>Microphone, to hear you, and Accessibility, so it can paste into other apps. Turn on Accessibility under System Settings → Privacy &amp; Security → Accessibility. Utter lives in your menu bar, and shows in the Dock while its window is open.</p>
+        </details>
+        <details>
+          <summary>What does it cost?</summary>
+          <p>Nothing for personal use. Groq’s free tier covers around 2,000 dictations a day. Past that, Groq charges about $0.04 per hour of audio.</p>
+        </details>
+        <details>
+          <summary>Where does my audio go?</summary>
+          <p>Recordings stay on your Mac and are sent to Groq only to be transcribed and cleaned up. To spell names right, Utter can include the text already in the box you’re typing in; it’s never stored, and you can turn it off. You choose how long recordings are kept and can delete any one from History.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="closing">
+    <div class="wrap">
+      <div class="appicon"><img src="assets/utter-icon-256.png" alt="" width="88" height="88"></div>
+      <h2>Stop typing everything.</h2>
+      <div class="cta-row">
+        <a class="btn" href="https://github.com/KhalerdAmeen/utter/releases/latest/download/Utter.dmg">Download for Mac</a>
+        <span class="fine">Free · macOS 13 or later</span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span class="brand"><img src="assets/utter-icon-256.png" alt="" width="20" height="20">Utter</span>
+    <span>Made by <a href="https://khadstudio.co" rel="noopener">Khadstudio</a></span>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const $ = id => document.getElementById(id);
+
+  function makeWave(el, n) {
+    const bars = Array.from({length: n}, () => { const s = document.createElement('span'); el.appendChild(s); return s; });
+    let timer, t = 0;
+    return {
+      start() {
+        clearInterval(timer);
+        timer = setInterval(() => {
+          t += 1;
+          bars.forEach((b, i) => {
+            const env = Math.sin((i / bars.length) * Math.PI);
+            const v = Math.abs(Math.sin(t * 0.55 + i * 0.7) * Math.cos(t * 0.21 + i * 0.3));
+            b.style.height = (4 + 17 * v * (0.45 + 0.55 * env)) + 'px';
+          });
+        }, 90);
+      },
+      stop() { clearInterval(timer); },
+      still() { bars.forEach((b, i) => b.style.height = (5 + 12 * Math.abs(Math.sin(i * 0.9)) * Math.sin((i / bars.length) * Math.PI)) + 'px'); }
+    };
+  }
+
+  /* ---------- hero demo ---------- */
+  const heroWave = makeWave($('wave'), 22);
+  const pill = $('pill'), raw = $('raw'), typed = $('typed'), ph = $('ph'), sent = $('sent'), time = $('time');
+  const finalText = "Can I text you after 8 instead?";
+
+  async function hero() {
+    if (reduce) { ph.hidden = true; typed.textContent = finalText; return; }
+    while (true) {
+      typed.textContent = ''; ph.hidden = false; sent.hidden = true; raw.classList.remove('on');
+      await wait(900);
+      pill.dataset.state = 'listening'; pill.classList.add('on'); heroWave.start();
+      const t0 = Date.now(); const clock = setInterval(() => time.textContent = '0:0' + Math.floor((Date.now() - t0) / 1000), 200);
+      await wait(700); raw.classList.add('on');
+      await wait(2600);
+      clearInterval(clock); heroWave.stop(); pill.dataset.state = 'processing';
+      await wait(900);
+      raw.classList.remove('on'); pill.dataset.state = 'done'; ph.hidden = true;
+      for (const ch of finalText) { typed.textContent += ch; await wait(14); }
+      await wait(700); pill.classList.remove('on');
+      await wait(1000);
+      sent.textContent = finalText; sent.hidden = false; typed.textContent = ''; ph.hidden = false;
+      await wait(2600);
+    }
+  }
+  hero();
+
+  /* ---------- how it works sequence ---------- */
+  const frames = document.querySelectorAll('.frame');
+  const key = $('key'), fill = $('trackfill'), typed2 = $('typed2'), chip2 = $('chip2');
+  const seqWave = makeWave($('wave2'), 18);
+  const seqText = "Let’s push the launch to Friday morning.";
+  seqWave.still();
+
+  function setActive(i) {
+    frames.forEach((f, j) => { f.classList.toggle('active', j === i); f.classList.toggle('done', j < i); });
+    fill.style.width = (i <= 0 ? 0 : i === 1 ? 50 : 100) + '%';
+  }
+  async function sequence() {
+    while (true) {
+      typed2.textContent = ''; chip2.classList.remove('on'); seqWave.still();
+      setActive(0); await wait(500);
+      key.classList.add('down'); await wait(900);
+      setActive(1); seqWave.start(); await wait(2400);
+      seqWave.stop(); key.classList.remove('down');
+      setActive(2);
+      await wait(500);
+      for (const ch of seqText) { typed2.textContent += ch; await wait(18); }
+      chip2.classList.add('on');
+      await wait(3200);
+    }
+  }
+  if (reduce) {
+    frames.forEach(f => f.classList.add('done')); typed2.textContent = seqText; fill.style.width = '100%';
+  } else {
+    let started = false;
+    new IntersectionObserver((entries, obs) => {
+      if (!started && entries[0].isIntersecting) { started = true; sequence(); obs.disconnect(); }
+    }, { threshold: 0.35 }).observe($('seq'));
+  }
+
+  /* ---------- tone tabs ---------- */
+  const examples = {
+    code: {
+      said: "um okay so can you refactor the the login function in auth dot ts and uh also add tests for it, oh and don't touch the session stuff",
+      got: "Can you refactor the login function in <code>auth.ts</code> and add tests for it? Don’t touch the session logic."
+    },
+    chat: {
+      said: "yeah so I'm running like ten minutes late, uh start without me",
+      got: "Running about 10 minutes late, start without me"
+    },
+    mail: {
+      said: "hi Ada um thanks for sending the brief over. new paragraph. I'll have the first concepts to you by Thursday, no actually Friday morning",
+      got: "Hi Ada, thanks for sending the brief over.\n\nI’ll have the first concepts to you by Friday morning."
+    },
+    cmd: {
+      saidLabel: "Selected text, then you said “make this shorter”",
+      said: "<span class=\"sel\">I wanted to reach out and let you know that we are currently in the process of reviewing the proposal and we will get back to you as soon as we possibly can.</span>",
+      gotLabel: "Replaced with",
+      got: "We’re reviewing the proposal and will get back to you soon."
+    }
+  };
+  const tabs = document.querySelectorAll('.tab');
+  function select(k) {
+    const e = examples[k];
+    tabs.forEach(t => t.setAttribute('aria-selected', String(t.dataset.k === k)));
+    $('said-label').textContent = e.saidLabel || 'What you said';
+    $('got-label').textContent = e.gotLabel || 'What Utter typed';
+    $('said').innerHTML = e.said; $('got').innerHTML = e.got;
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => select(t.dataset.k));
+    t.addEventListener('keydown', ev => {
+      if (!['ArrowRight','ArrowLeft','ArrowDown','ArrowUp'].includes(ev.key)) return;
+      ev.preventDefault();
+      const dir = (ev.key === 'ArrowRight' || ev.key === 'ArrowDown') ? 1 : -1;
+      const next = tabs[(i + dir + tabs.length) % tabs.length];
+      next.focus(); select(next.dataset.k);
+    });
+  });
+  select('code');
+})();
+</script>
+</body>
+</html>
