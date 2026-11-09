@@ -20,3 +20,5 @@ Free · macOS 13 or later · Apple Silicon and Intel
 - Every dictation is saved with its audio, so if your connection drops, nothing is lost. Retry it from History.
 
 Made by [Khadstudio](https://khadstudio.co).
+
+Happy dictating! 🎙️
