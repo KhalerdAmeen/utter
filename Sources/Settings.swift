@@ -3,8 +3,30 @@ import AVFoundation
 import Combine
 import SwiftUI
 
+/// Languages Whisper can hear and the writing model can write.
+struct LanguageOption: Hashable, Identifiable {
+    let code: String
+    let name: String
+    var id: String { code }
+
+    static let all: [LanguageOption] = pairs.map { LanguageOption(code: $0.0, name: $0.1) }
+
+    private static let pairs: [(String, String)] = [
+        ("en", "English"), ("es", "Spanish"), ("fr", "French"), ("de", "German"), ("pt", "Portuguese"),
+        ("it", "Italian"), ("nl", "Dutch"), ("ar", "Arabic"), ("zh", "Chinese"), ("ja", "Japanese"),
+        ("ko", "Korean"), ("hi", "Hindi"), ("ur", "Urdu"), ("bn", "Bengali"), ("ru", "Russian"),
+        ("uk", "Ukrainian"), ("pl", "Polish"), ("tr", "Turkish"), ("fa", "Persian"), ("he", "Hebrew"),
+        ("el", "Greek"), ("sv", "Swedish"), ("id", "Indonesian"), ("ms", "Malay"), ("vi", "Vietnamese"),
+        ("th", "Thai"), ("sw", "Swahili"), ("yo", "Yoruba"), ("ha", "Hausa"), ("tl", "Tagalog"),
+    ]
+
+    static func name(for code: String) -> String {
+        all.first { $0.code == code }?.name ?? code.uppercased()
+    }
+}
+
 extension Notification.Name {
-    static let utterDockPreferenceChanged = Notification.Name("utterDockPreferenceChanged")
+    static let tellrDockPreferenceChanged = Notification.Name("tellrDockPreferenceChanged")
 }
 
 enum Hotkey: String, CaseIterable, Identifiable {
@@ -75,10 +97,12 @@ final class AppSettings: ObservableObject {
     @Published var alwaysShowInDock: Bool {
         didSet {
             d.set(alwaysShowInDock, forKey: "alwaysShowInDock")
-            NotificationCenter.default.post(name: .utterDockPreferenceChanged, object: nil)
+            NotificationCenter.default.post(name: .tellrDockPreferenceChanged, object: nil)
         }
     }
-    @Published var language: String { didSet { d.set(language, forKey: "language") } }
+    @Published var language: String { didSet { d.set(language, forKey: "language") } }          // what you speak ("" = auto-detect)
+    @Published var outputLanguage: String { didSet { d.set(outputLanguage, forKey: "outputLanguage") } }   // what it types ("" = same as spoken)
+    @Published var quickTranslateLanguage: String { didSet { d.set(quickTranslateLanguage, forKey: "quickTranslateLanguage") } }  // Control + key
     @Published var vocabulary: String { didSet { d.set(vocabulary, forKey: "vocabulary") } }
     @Published var hotkey: Hotkey { didSet { d.set(hotkey.rawValue, forKey: "hotkey") } }
     @Published var soundsEnabled: Bool { didSet { d.set(soundsEnabled, forKey: "soundsEnabled") } }
@@ -89,6 +113,7 @@ final class AppSettings: ObservableObject {
     }
 
     private init() {
+        AppSettings.importFromUtter()
         apiKey = Keychain.get("apiKey") ?? ""
         baseURL = d.string(forKey: "baseURL") ?? AppSettings.defaultBaseURL
         sttModel = d.string(forKey: "sttModel") ?? AppSettings.defaultSTT
@@ -99,7 +124,9 @@ final class AppSettings: ObservableObject {
         useScreenContext = d.object(forKey: "useScreenContext") as? Bool ?? true
         alwaysShowInDock = d.object(forKey: "alwaysShowInDock") as? Bool ?? false
         language = d.string(forKey: "language") ?? "en"
-        vocabulary = d.string(forKey: "vocabulary") ?? "Utter, Khadstudio, Hilal, Claude, Claude Code, Framer, Figma, Sam"
+        outputLanguage = d.string(forKey: "outputLanguage") ?? ""
+        quickTranslateLanguage = d.string(forKey: "quickTranslateLanguage") ?? "en"
+        vocabulary = d.string(forKey: "vocabulary") ?? "Tellr, Khadstudio, Hilal, Claude, Claude Code, Framer, Figma, Sam"
         hotkey = Hotkey(rawValue: d.string(forKey: "hotkey") ?? "") ?? .rightOption
         soundsEnabled = d.object(forKey: "soundsEnabled") as? Bool ?? true
         retentionDays = d.object(forKey: "retentionDays") as? Int ?? 30
@@ -110,6 +137,20 @@ final class AppSettings: ObservableObject {
             snippets = [Snippet(trigger: "my website", text: "https://khadstudio.co")]
         }
         d.set(llmModel, forKey: "llmModel")
+    }
+
+    /// The app was called Utter (bundle id co.khadstudio.utter). Copy its preferences over the first time Tellr runs.
+    private static func importFromUtter() {
+        let d = UserDefaults.standard
+        guard !d.bool(forKey: "importedFromUtter") else { return }
+        d.set(true, forKey: "importedFromUtter")
+        guard let old = UserDefaults(suiteName: "co.khadstudio.utter")?.dictionaryRepresentation() else { return }
+        let keys = ["baseURL", "sttModel", "llmModel", "cleanupEnabled", "keepOnClipboard", "useScreenContext",
+                    "alwaysShowInDock", "language", "vocabulary", "hotkey", "soundsEnabled", "retentionDays",
+                    "tones", "snippets"]
+        for key in keys where d.object(forKey: key) == nil {
+            if let value = old[key] { d.set(value, forKey: key) }
+        }
     }
 
     func tone(for category: AppCategory) -> Tone {
@@ -154,23 +195,17 @@ struct SettingsPage: View {
     @State private var micGranted = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
     @State private var showAdvanced = false
 
-    private struct Lang: Hashable { let code: String; let name: String }
-    private let languages: [Lang] = [
-        Lang(code: "", name: "Auto-detect"), Lang(code: "en", name: "English"), Lang(code: "ar", name: "Arabic"),
-        Lang(code: "fr", name: "French"), Lang(code: "es", name: "Spanish"), Lang(code: "yo", name: "Yoruba"),
-        Lang(code: "ha", name: "Hausa"),
-    ]
     private let retention = [7, 14, 30, 90, 365, 0]
 
     var body: some View {
-        Page(title: "Settings", subtitle: "Tune how Utter listens, writes and stores your dictations.") {
+        Page(title: "Settings", subtitle: "Tune how Tellr listens, writes and stores your dictations.") {
             SectionLabel("General")
             Card {
-                SettingRow(title: "Always show in Dock", subtitle: "Utter lives in the menu bar. It appears in the Dock while its window is open; turn this on to keep it there.") {
+                SettingRow(title: "Always show in Dock", subtitle: "Tellr lives in the menu bar. It appears in the Dock while its window is open; turn this on to keep it there.") {
                     Toggle("", isOn: $settings.alwaysShowInDock).toggleStyle(.switch).labelsHidden()
                 }
                 Divider()
-                SettingRow(title: "Dictation key", subtitle: "Hold to talk, release to paste. Quick tap for hands-free, tap again to finish. Esc cancels. Hold Shift too to edit selected text by voice.") {
+                SettingRow(title: "Dictation key", subtitle: "Hold to talk, release to paste. Quick tap for hands-free, tap again to finish. Esc cancels. Hold Shift too to edit selected text by voice, or Control to translate.") {
                     Picker("", selection: $settings.hotkey) {
                         ForEach(Hotkey.allCases) { Text($0.short).tag($0) }
                     }
@@ -182,6 +217,39 @@ struct SettingsPage: View {
                     Text("Also set System Settings → Keyboard → “Press 🌐 key to” → Do Nothing.")
                         .font(.system(size: 11.5)).foregroundStyle(Theme.accent)
                         .padding(.bottom, 8)
+                }
+            }
+
+            Group {
+                SectionLabel("Languages")
+                Card {
+                    SettingRow(title: "I speak", subtitle: "Auto-detect lets you switch languages freely. Picking one is a little faster and more accurate.") {
+                        Picker("", selection: $settings.language) {
+                            Text("Auto-detect").tag("")
+                            ForEach(LanguageOption.all) { Text($0.name).tag($0.code) }
+                        }
+                        .labelsHidden().frame(width: 180)
+                    }
+                    Divider()
+                    SettingRow(title: "Type in", subtitle: "Speak any language and Tellr types in this one. “Same as I speak” keeps your words in the language you used.") {
+                        Picker("", selection: $settings.outputLanguage) {
+                            Text("Same as I speak").tag("")
+                            ForEach(LanguageOption.all) { Text($0.name).tag($0.code) }
+                        }
+                        .labelsHidden().frame(width: 180)
+                    }
+                    Divider()
+                    SettingRow(title: "Quick translate", subtitle: "Hold Control as you start a dictation to translate just that one into this language.") {
+                        Picker("", selection: $settings.quickTranslateLanguage) {
+                            ForEach(LanguageOption.all) { Text($0.name).tag($0.code) }
+                        }
+                        .labelsHidden().frame(width: 180)
+                    }
+                    if !settings.language.isEmpty && (!settings.outputLanguage.isEmpty) {
+                        Text("Tip: set “I speak” to Auto-detect so you can talk in any language and still get \(LanguageOption.name(for: settings.outputLanguage)).")
+                            .font(.system(size: 11.5)).foregroundStyle(Theme.accent)
+                            .padding(.bottom, 8)
+                    }
                 }
             }
 
@@ -197,13 +265,6 @@ struct SettingsPage: View {
                 Divider()
                 SettingRow(title: "Use on-screen context", subtitle: "Reads the text box you're typing in so names already there get spelled right. Only sent along with a dictation; never saved.") {
                     Toggle("", isOn: $settings.useScreenContext).toggleStyle(.switch).labelsHidden()
-                }
-                Divider()
-                SettingRow(title: "Language", subtitle: "Picking your language is faster and more accurate than auto-detect.") {
-                    Picker("", selection: $settings.language) {
-                        ForEach(languages, id: \.self) { Text($0.name).tag($0.code) }
-                    }
-                    .labelsHidden().frame(width: 150)
                 }
                 Divider()
                 SettingRow(title: "Sound effects") {
@@ -249,40 +310,42 @@ struct SettingsPage: View {
                 }
             }
 
-            SectionLabel("Storage")
-            Card {
-                SettingRow(title: "Keep recordings", subtitle: "Audio is saved before it's sent, so nothing is lost if your connection drops.") {
-                    Picker("", selection: $settings.retentionDays) {
-                        ForEach(retention, id: \.self) { Text($0 == 0 ? "Forever" : "\($0) days").tag($0) }
+            Group {
+                SectionLabel("Storage")
+                Card {
+                    SettingRow(title: "Keep recordings", subtitle: "Audio is saved before it's sent, so nothing is lost if your connection drops.") {
+                        Picker("", selection: $settings.retentionDays) {
+                            ForEach(retention, id: \.self) { Text($0 == 0 ? "Forever" : "\($0) days").tag($0) }
+                        }
+                        .labelsHidden().frame(width: 120)
                     }
-                    .labelsHidden().frame(width: 120)
-                }
-                Divider()
-                SettingRow(title: "Recordings folder") {
-                    Button("Open in Finder") { NSWorkspace.shared.open(store.audioDir) }
-                }
-                Divider()
-                SettingRow(title: "Backup", subtitle: "Dictionary, snippets, style, settings and history text in one file. Audio and your API key aren't included.") {
-                    HStack(spacing: 8) {
-                        Button("Export…") { Backup.export(settings: settings, store: store) }
-                        Button("Import…") { Backup.importFile(settings: settings, store: store) }
+                    Divider()
+                    SettingRow(title: "Recordings folder") {
+                        Button("Open in Finder") { NSWorkspace.shared.open(store.audioDir) }
+                    }
+                    Divider()
+                    SettingRow(title: "Backup", subtitle: "Dictionary, snippets, style, settings and history text in one file. Audio and your API key aren't included.") {
+                        HStack(spacing: 8) {
+                            Button("Export…") { Backup.export(settings: settings, store: store) }
+                            Button("Import…") { Backup.importFile(settings: settings, store: store) }
+                        }
                     }
                 }
-            }
 
-            SectionLabel("Permissions")
-            Card {
-                PermissionRow(title: "Microphone", detail: "To hear you", granted: micGranted) {
-                    AVCaptureDevice.requestAccess(for: .audio) { ok in
-                        DispatchQueue.main.async { micGranted = ok }
+                SectionLabel("Permissions")
+                Card {
+                    PermissionRow(title: "Microphone", detail: "To hear you", granted: micGranted) {
+                        AVCaptureDevice.requestAccess(for: .audio) { ok in
+                            DispatchQueue.main.async { micGranted = ok }
+                        }
+                        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone") {
+                            NSWorkspace.shared.open(url)
+                        }
                     }
-                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone") {
-                        NSWorkspace.shared.open(url)
+                    Divider()
+                    PermissionRow(title: "Accessibility", detail: "To paste into other apps", granted: axGranted) {
+                        Permissions.openAccessibilitySettings()
                     }
-                }
-                Divider()
-                PermissionRow(title: "Accessibility", detail: "To paste into other apps", granted: axGranted) {
-                    Permissions.openAccessibilitySettings()
                 }
             }
         }

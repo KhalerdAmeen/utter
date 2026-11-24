@@ -16,6 +16,13 @@ struct CleanupContext {
     let tone: Tone
     let snippets: [Snippet]
     var screenText: String? = nil   // what's already in the text box, for spelling names
+    var targetLanguage: String? = nil   // write the result in this language (translating if needed)
+}
+
+/// What Whisper heard, plus the language it detected (e.g. "arabic").
+struct Transcript {
+    let text: String
+    let language: String?
 }
 
 struct AIError: LocalizedError {
@@ -38,12 +45,12 @@ enum AIClient {
 
     // MARK: Speech → text (Whisper)
 
-    static func transcribe(fileURL: URL, config c: AIConfig) async throws -> String {
+    static func transcribe(fileURL: URL, config c: AIConfig) async throws -> Transcript {
         guard !c.apiKey.isEmpty else { throw AIError("No API key — add one in Settings") }
         var req = URLRequest(url: try endpoint(c, "/audio/transcriptions"))
         req.httpMethod = "POST"
         req.timeoutInterval = 30
-        let boundary = "utter-\(UUID().uuidString)"
+        let boundary = "tellr-\(UUID().uuidString)"
         req.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         req.setValue("Bearer \(c.apiKey)", forHTTPHeaderField: "Authorization")
 
@@ -52,7 +59,7 @@ enum AIClient {
             body.append("--\(boundary)\r\nContent-Disposition: form-data; name=\"\(name)\"\r\n\r\n\(value)\r\n")
         }
         field("model", c.sttModel)
-        field("response_format", "json")
+        field("response_format", "verbose_json")   // includes the detected language
         field("temperature", "0")
         if !c.language.isEmpty { field("language", c.language) }
         if !c.vocabulary.isEmpty { field("prompt", "Names and terms: \(c.vocabulary).") }
@@ -62,9 +69,10 @@ enum AIClient {
 
         let (data, resp) = try await URLSession.shared.upload(for: req, from: body)
         try check(resp, data)
-        struct R: Decodable { let text: String }
-        return try JSONDecoder().decode(R.self, from: data).text
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        struct R: Decodable { let text: String; let language: String? }
+        let r = try JSONDecoder().decode(R.self, from: data)
+        return Transcript(text: r.text.trimmingCharacters(in: .whitespacesAndNewlines),
+                          language: r.language?.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
     // MARK: Raw text → polished text (LLM)
@@ -73,11 +81,12 @@ enum AIClient {
         // Fast path: the whole dictation is a snippet trigger → no AI call needed.
         let spoken = normalize(raw)
         if let s = context.snippets.first(where: { normalize($0.trigger) == spoken }) { return s.text }
+        let translating = !(context.targetLanguage ?? "").isEmpty
 
         var out = try await chat(
             system: systemPrompt(vocabulary: c.vocabulary, context: context),
             user: "<transcript>\n\(raw)\n</transcript>",
-            config: c, timeout: 12)
+            config: c, timeout: translating ? 20 : 12)
         out = out.replacingOccurrences(of: "<transcript>", with: "")
             .replacingOccurrences(of: "</transcript>", with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -85,7 +94,8 @@ enum AIClient {
             out = String(out.dropFirst().dropLast())
         }
         // Guardrail: if the model "answered" instead of cleaning, fall back to the raw transcript.
-        if out.count > raw.count * 2 + 200 { throw AIError("Cleanup went off-script") }
+        // (Translations can legitimately run longer, so they get more room.)
+        if out.count > raw.count * (translating ? 3 : 2) + 200 { throw AIError("Cleanup went off-script") }
 
         for (i, s) in context.snippets.enumerated() {
             out = out.replacingOccurrences(of: "{{snippet:\(i)}}", with: s.text)
@@ -195,6 +205,10 @@ enum AIClient {
         }
         p += "\n\nContext: \(context.category.context(appName: context.appName))"
         p += "\n\(context.tone.instruction)"
+        if let code = context.targetLanguage, !code.isEmpty {
+            let name = LanguageOption.name(for: code)
+            p += "\n\nOutput language: write the final text in \(name). If the speaker used another language (or mixed languages), translate it faithfully and naturally into \(name), as a fluent native speaker would write it, after applying all the cleanup rules above. Keep names, brands, numbers, URLs and technical terms as they are. This overrides rule 7 only as far as translation requires; never add or drop meaning."
+        }
         return p
     }
 

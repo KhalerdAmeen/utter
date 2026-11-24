@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Builds Utter.app with the Xcode command line tools — no Xcode project needed.
-#   ./build.sh               → build/Utter.app (this Mac's chip)
+# Builds Tellr.app with the Xcode command line tools — no Xcode project needed.
+#   ./build.sh               → build/Tellr.app (this Mac's chip)
 #   ./build.sh --install     → also copies to /Applications and launches it
 #   UNIVERSAL=1 ./build.sh   → one app that runs on Apple Silicon AND Intel Macs
 set -euo pipefail
 cd "$(dirname "$0")"
 
-APP_NAME="Utter"
+APP_NAME="Tellr"
 APP="build/${APP_NAME}.app"
 BIN="${APP}/Contents/MacOS/${APP_NAME}"
 
@@ -57,30 +57,35 @@ done
 # Signing. Preference order:
 #   1. SIGN_ID env var, if you set one
 #   2. your "Developer ID Application" certificate (needed to notarize + share without warnings)
-#   3. a self-signed "Utter Dev" certificate
+#   3. a self-signed "Tellr Dev" certificate
 #   4. ad-hoc
 DEV_ID="$(security find-identity -v -p codesigning 2>/dev/null | grep -o '"Developer ID Application: [^"]*"' | head -1 | tr -d '"' || true)"
 if [[ -n "${SIGN_ID:-}" ]]; then
   ID="$SIGN_ID"
 elif [[ -n "$DEV_ID" ]]; then
   ID="$DEV_ID"
-elif security find-certificate -c "Utter Dev" >/dev/null 2>&1; then
-  ID="Utter Dev"
+elif security find-certificate -c "Tellr Dev" >/dev/null 2>&1; then
+  ID="Tellr Dev"
 else
   ID="-"
 fi
 
 if [[ "$ID" == "Developer ID Application:"* ]]; then
   # Hardened Runtime + secure timestamp = what Apple's notary service requires
-  codesign --force --options runtime --timestamp --entitlements Utter.entitlements --sign "$ID" "$APP"
+  codesign --force --options runtime --timestamp --entitlements Tellr.entitlements --sign "$ID" "$APP"
   codesign --verify --strict --verbose=1 "$APP"
   echo "-> Signed with ${ID}"
 else
-  codesign --force --options runtime --entitlements Utter.entitlements --sign "$ID" "$APP"
+  codesign --force --options runtime --entitlements Tellr.entitlements --sign "$ID" "$APP"
   echo "-> Signed with '${ID}' (not notarizable; install a Developer ID Application certificate to share)"
 fi
 
 if [[ "${1:-}" == "--install" ]]; then
+  # The app used to be called Utter. Quit it so two dictation apps don't fight over the same key.
+  pkill -x "Utter" 2>/dev/null || true
+  if [[ -d "/Applications/Utter.app" ]]; then
+    echo "-> Note: the old /Applications/Utter.app is still there. Tellr imports its settings and history; you can delete Utter once Tellr works."
+  fi
   pkill -x "$APP_NAME" 2>/dev/null || true
   sleep 0.5
   rm -rf "/Applications/${APP_NAME}.app"

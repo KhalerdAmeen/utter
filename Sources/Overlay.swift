@@ -4,7 +4,7 @@ import SwiftUI
 // The floating pill at the bottom of the screen.
 
 enum OverlayState: Equatable {
-    case listening(handsFree: Bool, command: Bool)
+    case listening(handsFree: Bool, command: Bool, translateTo: String?)
     case processing(String)
     case success(String)
     case message(String)
@@ -48,14 +48,14 @@ final class Overlay {
         return p
     }()
 
-    func listening(handsFree: Bool, command: Bool) {
+    func listening(handsFree: Bool, command: Bool, translateTo: String? = nil) {
         if case .listening = model.state, panel.isVisible {
             // keep timer + waveform running
         } else {
             model.levels = Array(repeating: 0, count: OverlayModel.barCount)
             model.startedAt = Date()
         }
-        present(.listening(handsFree: handsFree, command: command), autoHide: nil)
+        present(.listening(handsFree: handsFree, command: command, translateTo: translateTo), autoHide: nil)
     }
 
     func level(_ l: Float) { model.push(l) }
@@ -117,7 +117,7 @@ struct OverlayView: View {
 
     @ViewBuilder private var content: some View {
         switch model.state {
-        case .listening(let handsFree, let command):
+        case .listening(let handsFree, let command, let translateTo):
             if command {
                 Text("EDIT")
                     .font(.system(size: 9.5, weight: .heavy))
@@ -125,6 +125,14 @@ struct OverlayView: View {
                     .foregroundStyle(Theme.pill)
                     .padding(.horizontal, 6).padding(.vertical, 2)
                     .background(Capsule().fill(Theme.accent))
+            }
+            if let code = translateTo {
+                Text("→ \(code.uppercased())")
+                    .font(.system(size: 9.5, weight: .heavy))
+                    .tracking(0.6)
+                    .foregroundStyle(Color.white)
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(Capsule().strokeBorder(Color.white.opacity(0.5), lineWidth: 1))
             }
             PulsingDot()
             Waveform(levels: model.levels)

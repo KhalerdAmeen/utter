@@ -1,7 +1,7 @@
 import AppKit
 
 @main
-struct UtterMain {
+struct TellrMain {
     @MainActor static func main() {
         let app = NSApplication.shared
         let delegate = AppDelegate()
@@ -13,12 +13,12 @@ struct UtterMain {
 
     @MainActor static func installEditMenu() {
         let main = NSMenu()
-        // App menu (visible when Utter is in the Dock and frontmost)
+        // App menu (visible when Tellr is in the Dock and frontmost)
         let appItem = NSMenuItem()
-        let appMenu = NSMenu(title: "Utter")
-        appMenu.addItem(withTitle: "Hide Utter", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        let appMenu = NSMenu(title: "Tellr")
+        appMenu.addItem(withTitle: "Hide Tellr", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
         appMenu.addItem(.separator())
-        appMenu.addItem(withTitle: "Quit Utter", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenu.addItem(withTitle: "Quit Tellr", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appItem.submenu = appMenu
         main.addItem(appItem)
 

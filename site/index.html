@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Utter — talk in any Mac app, get clean text</title>
-<meta name="description" content="Hold a key in any Mac app and talk. Utter removes the ums, keeps what you meant, and types it where your cursor is. Free.">
+<title>Tellr — talk in any Mac app, in any language</title>
+<meta name="description" content="Hold a key in any Mac app and talk. Tellr removes the ums, keeps what you meant, and types it where your cursor is. Free.">
 <meta name="theme-color" content="#121214">
-<link rel="icon" type="image/png" href="assets/utter-icon-256.png">
-<link rel="apple-touch-icon" href="assets/utter-icon-256.png">
-<meta property="og:image" content="assets/utter-icon-256.png">
+<link rel="icon" type="image/png" href="assets/tellr-icon-256.png">
+<link rel="apple-touch-icon" href="assets/tellr-icon-256.png">
+<meta property="og:image" content="assets/tellr-icon-256.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500&display=swap" rel="stylesheet">
@@ -204,12 +204,12 @@
 
 <nav aria-label="Main">
   <div class="wrap">
-    <a class="brand" href="#top"><img src="assets/utter-icon-256.png" alt="" width="26" height="26">Utter</a>
+    <a class="brand" href="#top"><img src="assets/tellr-icon-256.png" alt="" width="26" height="26">Tellr</a>
     <div class="navlinks">
       <a href="#how">How it works</a>
       <a href="#features">Features</a>
       <a href="#setup">Setup</a>
-      <a class="btn sm" href="https://github.com/KhalerdAmeen/utter/releases/latest/download/Utter.dmg">Download</a>
+      <a class="btn sm" href="https://github.com/KhalerdAmeen/tellr/releases/latest/download/Tellr.dmg">Download</a>
     </div>
   </div>
 </nav>
@@ -217,18 +217,18 @@
 <main id="top">
   <header class="hero">
     <div class="wrap">
-      <div class="appicon"><img src="assets/utter-icon-256.png" alt="Utter app icon" width="120" height="120"></div>
-      <h1>Say it messy. <span class="soft">Send it clean.</span></h1>
-      <p class="lede">Hold a key in any Mac app and talk. Utter drops the ums, keeps what you meant, and types it right where your cursor is.</p>
+      <div class="appicon"><img src="assets/tellr-icon-256.png" alt="Tellr app icon" width="120" height="120"></div>
+      <h1>Just talk. <span class="soft">Tellr writes it.</span></h1>
+      <p class="lede">Hold a key in any Mac app and talk, in any language. Tellr drops the ums, keeps what you meant, and types it right where your cursor is.</p>
       <div class="cta-row">
-        <a class="btn" href="https://github.com/KhalerdAmeen/utter/releases/latest/download/Utter.dmg">
+        <a class="btn" href="https://github.com/KhalerdAmeen/tellr/releases/latest/download/Tellr.dmg">
           <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 10.5l5 5 5-5"/><path d="M5 20h14"/></svg>
           Download for Mac
         </a>
         <span class="fine">Free · macOS 13 or later · Apple Silicon and Intel · Notarized by Apple</span>
       </div>
 
-      <div class="stage" aria-label="Demo: speaking a message and Utter typing the cleaned version">
+      <div class="stage" aria-label="Demo: speaking a message and Tellr typing the cleaned version">
         <div class="window">
           <div class="chrome"><i></i><i></i><i></i><span>Bash</span></div>
           <div class="thread">
@@ -290,10 +290,11 @@
           <button class="tab" role="tab" aria-selected="false" aria-controls="tone-panel" data-k="chat">Chat</button>
           <button class="tab" role="tab" aria-selected="false" aria-controls="tone-panel" data-k="mail">Email</button>
           <button class="tab" role="tab" aria-selected="false" aria-controls="tone-panel" data-k="cmd">Command mode</button>
+          <button class="tab" role="tab" aria-selected="false" aria-controls="tone-panel" data-k="tr">Translate</button>
         </div>
         <div class="panel" id="tone-panel" role="tabpanel" aria-live="polite">
           <div class="said"><span class="lbl" id="said-label">What you said</span><span id="said"></span></div>
-          <div class="got"><span class="lbl" id="got-label">What Utter typed</span><span id="got"></span></div>
+          <div class="got"><span class="lbl" id="got-label">What Tellr typed</span><span id="got"></span></div>
         </div>
       </div>
     </div>
@@ -311,7 +312,7 @@
         <div class="feat"><h3>Your style, per app</h3><p>Set how formal it writes for messages, email and work tools.</p><div class="seg" aria-hidden="true"><span>Formal</span><span class="on">Casual</span><span>Very casual</span></div></div>
         <div class="feat"><h3>Names spelled right</h3><p>Teach it names and jargon, add a misheard word straight from History, and it reads the text box you’re in to get names already there right.</p><div class="chips" aria-hidden="true"><span>Khadstudio</span><span>Supabase</span><span>Bash</span></div></div>
         <div class="feat"><h3>Never loses a dictation</h3><p>Audio is saved before anything goes online. If the connection drops, it retries when you’re back. Back up everything to one file.</p></div>
-        <div class="feat"><h3>Free to run, your models</h3><p>Bring a free Groq API key, kept in your Mac’s Keychain. Switch speech and writing models in Settings.</p></div>
+        <div class="feat"><h3>Speak any language</h3><p>Talk in any of 30 languages and get text in the one you choose. Hold Control to translate a single dictation.</p></div>
       </div>
     </div>
   </section>
@@ -322,23 +323,27 @@
       <div class="faq">
         <details open>
           <summary>Is it safe to install?</summary>
-          <p>Yes. Utter is signed with an Apple Developer ID and notarized by Apple, so it opens like any other app. Drag it to Applications and double-click.</p>
+          <p>Yes. Tellr is signed with an Apple Developer ID and notarized by Apple, so it opens like any other app. Drag it to Applications and double-click.</p>
         </details>
         <details>
           <summary>Where do I get an API key?</summary>
-          <p>Create a free key at <a href="https://console.groq.com/keys" rel="noopener">console.groq.com/keys</a>. No card needed. Paste it into Utter’s Settings.</p>
+          <p>Create a free key at <a href="https://console.groq.com/keys" rel="noopener">console.groq.com/keys</a>. No card needed. Paste it into Tellr’s Settings.</p>
         </details>
         <details>
           <summary>Which permissions does it need?</summary>
-          <p>Microphone, to hear you, and Accessibility, so it can paste into other apps. Turn on Accessibility under System Settings → Privacy &amp; Security → Accessibility. Utter lives in your menu bar, and shows in the Dock while its window is open.</p>
+          <p>Microphone, to hear you, and Accessibility, so it can paste into other apps. Turn on Accessibility under System Settings → Privacy &amp; Security → Accessibility. Tellr lives in your menu bar, and shows in the Dock while its window is open.</p>
         </details>
         <details>
           <summary>What does it cost?</summary>
           <p>Nothing for personal use. Groq’s free tier covers around 2,000 dictations a day. Past that, Groq charges about $0.04 per hour of audio.</p>
         </details>
         <details>
+          <summary>Which languages does it understand?</summary>
+          <p>30 languages, including English, Spanish, French, German, Portuguese, Arabic, Chinese, Japanese, Hindi, Swahili and Yoruba. Set “Type in” to get every dictation in one language whatever you speak, or hold Control while you start a dictation to translate just that one.</p>
+        </details>
+        <details>
           <summary>Where does my audio go?</summary>
-          <p>Recordings stay on your Mac and are sent to Groq only to be transcribed and cleaned up. To spell names right, Utter can include the text already in the box you’re typing in; it’s never stored, and you can turn it off. You choose how long recordings are kept and can delete any one from History.</p>
+          <p>Recordings stay on your Mac and are sent to Groq only to be transcribed and cleaned up. To spell names right, Tellr can include the text already in the box you’re typing in; it’s never stored, and you can turn it off. You choose how long recordings are kept and can delete any one from History.</p>
         </details>
       </div>
     </div>
@@ -346,10 +351,10 @@
 
   <section class="closing">
     <div class="wrap">
-      <div class="appicon"><img src="assets/utter-icon-256.png" alt="" width="88" height="88"></div>
+      <div class="appicon"><img src="assets/tellr-icon-256.png" alt="" width="88" height="88"></div>
       <h2>Stop typing everything.</h2>
       <div class="cta-row">
-        <a class="btn" href="https://github.com/KhalerdAmeen/utter/releases/latest/download/Utter.dmg">Download for Mac</a>
+        <a class="btn" href="https://github.com/KhalerdAmeen/tellr/releases/latest/download/Tellr.dmg">Download for Mac</a>
         <span class="fine">Free · macOS 13 or later</span>
       </div>
     </div>
@@ -358,7 +363,7 @@
 
 <footer>
   <div class="wrap">
-    <span class="brand"><img src="assets/utter-icon-256.png" alt="" width="20" height="20">Utter</span>
+    <span class="brand"><img src="assets/tellr-icon-256.png" alt="" width="20" height="20">Tellr</span>
     <span>Made by <a href="https://khadstudio.co" rel="noopener">Khadstudio</a></span>
   </div>
 </footer>
@@ -468,6 +473,12 @@
       said: "<span class=\"sel\">I wanted to reach out and let you know that we are currently in the process of reviewing the proposal and we will get back to you as soon as we possibly can.</span>",
       gotLabel: "Replaced with",
       got: "We’re reviewing the proposal and will get back to you soon."
+    },
+    tr: {
+      saidLabel: "You said, in Spanish, holding Control",
+      said: "eh, dile al equipo que la reunión es el jueves, no, mejor el viernes a las diez",
+      gotLabel: "Tellr typed, in English",
+      got: "Tell the team the meeting is on Friday at 10."
     }
   };
   const tabs = document.querySelectorAll('.tab');
@@ -475,7 +486,7 @@
     const e = examples[k];
     tabs.forEach(t => t.setAttribute('aria-selected', String(t.dataset.k === k)));
     $('said-label').textContent = e.saidLabel || 'What you said';
-    $('got-label').textContent = e.gotLabel || 'What Utter typed';
+    $('got-label').textContent = e.gotLabel || 'What Tellr typed';
     $('said').innerHTML = e.said; $('got').innerHTML = e.got;
   }
   tabs.forEach((t, i) => {

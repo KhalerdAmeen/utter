@@ -270,7 +270,7 @@ struct StylePage: View {
     @ObservedObject var settings: AppSettings
 
     var body: some View {
-        Page(title: "Style", subtitle: "Choose how you sound in each kind of app. Utter detects which app you're typing into.") {
+        Page(title: "Style", subtitle: "Choose how you sound in each kind of app. Tellr detects which app you're typing into.") {
             ForEach(AppCategory.allCases) { category in
                 SectionLabel(category.title)
                 Card {

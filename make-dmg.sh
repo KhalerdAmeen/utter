@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Packages Utter into a shareable DMG: build/Utter.dmg
+# Packages Tellr into a shareable DMG: build/Tellr.dmg
 # - Universal build (Apple Silicon + Intel)
 # - Signed with your Developer ID, notarized by Apple and stapled, so it opens
 #   with no "unidentified developer" warning.
@@ -17,17 +17,17 @@ DEV_ID="$(security find-identity -v -p codesigning 2>/dev/null | grep -o '"Devel
 
 STAGE="build/dmg"
 rm -rf "$STAGE"; mkdir -p "$STAGE"
-cp -R build/Utter.app "$STAGE/"
+cp -R build/Tellr.app "$STAGE/"
 ln -s /Applications "${STAGE}/Applications"
 
 cat > "${STAGE}/Read me first.txt" <<'EOF'
 UTTER - talk instead of type, in any Mac app
 
 INSTALL
-1. Drag Utter into the Applications folder (in this window).
-2. Open Utter from Applications.
-3. Get a free API key at console.groq.com/keys and paste it into Utter's Settings.
-4. Allow the Microphone, and turn on Utter under
+1. Drag Tellr into the Applications folder (in this window).
+2. Open Tellr from Applications.
+3. Get a free API key at console.groq.com/keys and paste it into Tellr's Settings.
+4. Allow the Microphone, and turn on Tellr under
    System Settings > Privacy & Security > Accessibility.
 
 USE
@@ -38,9 +38,9 @@ Select text + hold Shift + Right Option to rewrite it by voice.
 Happy dictating!
 EOF
 
-DMG="build/Utter.dmg"   # fixed name so the website link always works
+DMG="build/Tellr.dmg"   # fixed name so the website link always works
 rm -f "$DMG"
-hdiutil create -volname "Utter" -srcfolder "$STAGE" -ov -format UDZO "$DMG" >/dev/null
+hdiutil create -volname "Tellr" -srcfolder "$STAGE" -ov -format UDZO "$DMG" >/dev/null
 rm -rf "$STAGE"
 
 if [[ -z "$DEV_ID" ]]; then
@@ -71,11 +71,11 @@ if grep -q "status: Accepted" <<<"$OUT"; then
       echo "-> GitHub CLI not installed. Run: brew install gh && gh auth login   (then re-run with --publish)"
       exit 1
     fi
-    gh release create "v${VERSION}" "$DMG" --repo KhalerdAmeen/utter \
-      --title "Utter ${VERSION}" --notes "Utter ${VERSION} for macOS 13+ (Apple Silicon and Intel). Signed and notarized by Apple. Happy dictating!"
+    gh release create "v${VERSION}" "$DMG" --repo "${GH_REPO:-KhalerdAmeen/tellr}" \
+      --title "Tellr ${VERSION}" --notes "Tellr ${VERSION} for macOS 13+ (Apple Silicon and Intel). Signed and notarized by Apple. Happy dictating!"
     echo "-> Published v${VERSION}. The website's Download button now serves it."
   else
-    echo "   Publish it: re-run with --publish, or upload it to a GitHub Release on KhalerdAmeen/utter."
+    echo "   Publish it: re-run with --publish, or upload it to a GitHub Release on ${GH_REPO:-KhalerdAmeen/tellr}."
     open -R "$DMG"
   fi
 else

@@ -79,7 +79,7 @@ struct Sidebar: View {
                     .resizable()
                     .interpolation(.high)
                     .frame(width: 30, height: 30)
-                Text("Utter").font(.system(size: 15, weight: .semibold))
+                Text("Tellr").font(.system(size: 15, weight: .semibold))
             }
             .padding(.leading, 8)
             .padding(.top, 48)
@@ -106,6 +106,13 @@ struct Sidebar: View {
                     Text("⇧ Shift + \(settings.hotkey.short)")
                         .font(.system(size: 12, weight: .semibold))
                     Text("to edit selected text")
+                        .font(.system(size: 11.5)).foregroundStyle(.secondary)
+                }
+                Divider()
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("⌃ Control + \(settings.hotkey.short)")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text("to translate to \(LanguageOption.name(for: settings.quickTranslateLanguage))")
                         .font(.system(size: 11.5)).foregroundStyle(.secondary)
                 }
             }
@@ -174,13 +181,13 @@ struct HomePage: View {
     }
 
     var body: some View {
-        Page(title: greeting, subtitle: "Hold \(settings.hotkey.label) in any app and just talk. Quick tap for hands-free. Select text and hold Shift too to rewrite it by voice.") {
+        Page(title: greeting, subtitle: "Hold \(settings.hotkey.label) in any app and just talk. Quick tap for hands-free. Select text and hold Shift too to rewrite it by voice. Hold Control too to translate.") {
             VStack(spacing: 10) {
                 if settings.apiKey.isEmpty {
                     Banner(icon: "key.fill", text: "Add your Groq API key to start dictating.", button: "Open Settings") { nav.tab = .settings }
                 }
                 if !Permissions.accessibilityGranted {
-                    Banner(icon: "hand.raised.fill", text: "Turn on Accessibility so Utter can paste for you.", button: "Grant") { Permissions.openAccessibilitySettings() }
+                    Banner(icon: "hand.raised.fill", text: "Turn on Accessibility so Tellr can paste for you.", button: "Grant") { Permissions.openAccessibilitySettings() }
                 }
                 if store.failedCount > 0 {
                     Banner(icon: "arrow.clockwise", text: "\(store.failedCount) dictation\(store.failedCount == 1 ? "" : "s") didn't go through. Audio is saved.", button: "Retry all") { actions.retryAll() }
@@ -332,11 +339,17 @@ struct DictationCard: View {
                         .padding(.horizontal, 5).padding(.vertical, 1)
                         .background(Capsule().fill(Theme.accent))
                 }
-                Text(item.date, format: .dateTime.month(.abbreviated).day().hour().minute())
-                dot
-                Text(item.appName)
+                Group {
+                    Text(item.date, format: .dateTime.month(.abbreviated).day().hour().minute())
+                    dot
+                    Text(item.appName)
+                }
                 dot
                 Text(formatDuration(item.duration))
+                if let lang = languageLabel {
+                    dot
+                    Text(lang).foregroundStyle(item.targetLanguage == nil ? Color.secondary : Theme.accent)
+                }
                 if let ms = item.processingMs {
                     dot
                     Text(String(format: "%.1fs to process", Double(ms) / 1000))
@@ -425,6 +438,18 @@ struct DictationCard: View {
     private var dot: some View { Text("·") }
 
     /// "whisper-large-v3 + gpt-oss-120b"
+    /// "Arabic → English" when translated, or the spoken language when it wasn't English.
+    private var languageLabel: String? {
+        let heard: String? = item.detectedLanguage.map { $0.prefix(1).uppercased() + $0.dropFirst() }
+        if let code = item.targetLanguage, !code.isEmpty {
+            let to = LanguageOption.name(for: code)
+            if let heard, heard.lowercased() != to.lowercased() { return "\(heard) → \(to)" }
+            return "→ \(to)"
+        }
+        if let heard, heard.lowercased() != "english" { return heard }
+        return nil
+    }
+
     private var modelsLabel: String? {
         guard let stt = item.sttModel else { return nil }
         let short: (String) -> String = { $0.split(separator: "/").last.map(String.init) ?? $0 }
@@ -505,7 +530,7 @@ struct DictionaryPage: View {
     @State private var newWord = ""
 
     var body: some View {
-        Page(title: "Dictionary", subtitle: "Names, brands and jargon Utter should always spell right. Add anyone it keeps mishearing.") {
+        Page(title: "Dictionary", subtitle: "Names, brands and jargon Tellr should always spell right. Add anyone it keeps mishearing.") {
             HStack(spacing: 8) {
                 TextField("Add a word or name — e.g. Sam, Khadstudio, Supabase", text: $newWord)
                     .textFieldStyle(.plain)

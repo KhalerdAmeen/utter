@@ -21,13 +21,15 @@ struct Dictation: Codable, Identifiable, Equatable {
     var sourceText: String?    // command mode: the text that was selected
     var sttModel: String?      // which models produced this, for comparing
     var llmModel: String?
+    var detectedLanguage: String?   // what Whisper heard, e.g. "arabic"
+    var targetLanguage: String?     // code it was written in, when translated (e.g. "en")
 
     var isCommand: Bool { mode == .command }
 
     var wordCount: Int { (clean ?? "").split(whereSeparator: { $0.isWhitespace }).count }
 }
 
-/// Every dictation + its audio, stored in ~/Library/Application Support/Utter
+/// Every dictation + its audio, stored in ~/Library/Application Support/Tellr
 @MainActor
 final class HistoryStore: ObservableObject {
     static let shared = HistoryStore()
@@ -37,8 +39,13 @@ final class HistoryStore: ObservableObject {
     private let fileURL: URL
 
     init() {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Utter", isDirectory: true)
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let base = support.appendingPathComponent("Tellr", isDirectory: true)
+        // The app used to be called Utter: move its history and recordings over, once.
+        let legacy = support.appendingPathComponent("Utter", isDirectory: true)
+        if !FileManager.default.fileExists(atPath: base.path), FileManager.default.fileExists(atPath: legacy.path) {
+            try? FileManager.default.moveItem(at: legacy, to: base)
+        }
         audioDir = base.appendingPathComponent("Recordings", isDirectory: true)
         fileURL = base.appendingPathComponent("history.json")
         try? FileManager.default.createDirectory(at: audioDir, withIntermediateDirectories: true)

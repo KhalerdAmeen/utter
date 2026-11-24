@@ -132,9 +132,18 @@ enum Permissions {
 // MARK: - Keychain (API key never sits in a plain file)
 
 enum Keychain {
-    private static let service = "co.khadstudio.utter"
+    private static let service = "co.khadstudio.tellr"
+    private static let legacyService = "co.khadstudio.utter"   // the app was called Utter before
 
+    /// Reads the key; if Tellr has none yet, picks up the one saved by Utter and copies it over.
     static func get(_ account: String) -> String? {
+        if let value = read(account, service: service) { return value }
+        guard let old = read(account, service: legacyService) else { return nil }
+        set(old, for: account)
+        return old
+    }
+
+    private static func read(_ account: String, service: String) -> String? {
         let q: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,

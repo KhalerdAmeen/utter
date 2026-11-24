@@ -22,7 +22,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private var mainWindow: NSWindow?
 
     // Current recording
-    private struct Session { let id: UUID; let url: URL; let app: NSRunningApplication?; let pressedAt: Date; let command: Bool }
+    private struct Session {
+        let id: UUID; let url: URL; let app: NSRunningApplication?; let pressedAt: Date
+        let command: Bool
+        let target: String?   // language code to write in (from "Type in", or Control = quick translate)
+    }
     private var session: Session?
     private var commandSelection: String?   // text that was selected when command mode started
     private var screenContext: [UUID: String] = [:]   // text already in the field, per dictation (memory only)
@@ -45,7 +49,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             .sink { [weak self] _ in self?.updateIcon() }
             .store(in: &cancellables)
 
-        NotificationCenter.default.publisher(for: .utterDockPreferenceChanged)
+        NotificationCenter.default.publisher(for: .tellrDockPreferenceChanged)
             .sink { [weak self] _ in
                 guard let self else { return }
                 self.updateDockPolicy(windowOpen: self.mainWindow?.isVisible ?? false)
@@ -86,8 +90,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             }
             return
         }
-        // Holding Shift as well = command mode (edit the selected text by voice)
-        startRecording(command: NSEvent.modifierFlags.contains(.shift))
+        // Holding Shift as well = command mode (edit the selected text by voice).
+        // Holding Control as well = translate this one dictation (Quick translate).
+        let flags = NSEvent.modifierFlags
+        let command = flags.contains(.shift)
+        startRecording(command: command, quickTranslate: !command && flags.contains(.control))
     }
 
     private func keyUp() {
@@ -95,7 +102,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         guard let s = session, !locked else { return }
         if Date().timeIntervalSince(s.pressedAt) < 0.3 {
             locked = true
-            overlay.listening(handsFree: true, command: s.command)
+            overlay.listening(handsFree: true, command: s.command, translateTo: s.target)
             return
         }
         stopRecording()
@@ -103,10 +110,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
     // MARK: Recording
 
-    private func startRecording(command: Bool) {
+    private func startRecording(command: Bool, quickTranslate: Bool) {
         guard AVCaptureDevice.authorizationStatus(for: .audio) == .authorized else {
             AVCaptureDevice.requestAccess(for: .audio) { _ in }
-            overlay.error("Allow microphone access for Utter in System Settings")
+            overlay.error("Allow microphone access for Tellr in System Settings")
             return
         }
         if command {
@@ -134,11 +141,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
            let onScreen = SelectionReader.focusedFieldText() {
             screenContext[id] = onScreen
         }
-        session = Session(id: id, url: url, app: NSWorkspace.shared.frontmostApplication, pressedAt: Date(), command: command)
+        let target: String? = command ? nil
+            : (quickTranslate ? settings.quickTranslateLanguage
+               : (settings.outputLanguage.isEmpty ? nil : settings.outputLanguage))
+        session = Session(id: id, url: url, app: NSWorkspace.shared.frontmostApplication, pressedAt: Date(),
+                          command: command, target: target)
         locked = false
         AIClient.warmUp(config: settings.config)   // connect to the API while you talk
         play("Tink")
-        overlay.listening(handsFree: false, command: command)
+        overlay.listening(handsFree: false, command: command, translateTo: target)
         updateIcon()
         levelTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
             Task { @MainActor in
@@ -177,9 +188,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             item.mode = .command
             item.sourceText = commandSelection
         }
+        item.targetLanguage = s.target
         commandSelection = nil
         history.add(item)
-        overlay.processing(s.command ? "Rewriting" : (settings.cleanupEnabled ? "Polishing" : "Transcribing"))
+        overlay.processing(s.command ? "Rewriting"
+                           : (s.target != nil ? "Translating" : (settings.cleanupEnabled ? "Polishing" : "Transcribing")))
         process(item.id, paste: true)
     }
 
@@ -207,11 +220,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         let category = AppCategory.of(bundleID: item.bundleID)
         let context = CleanupContext(appName: item.appName, category: category,
                                      tone: settings.tone(for: category), snippets: settings.snippets,
-                                     screenText: screenContext.removeValue(forKey: id))
+                                     screenText: screenContext.removeValue(forKey: id),
+                                     targetLanguage: item.targetLanguage)
+        let translating = !(item.targetLanguage ?? "").isEmpty
 
         Task {
             do {
-                let raw = try await AIClient.transcribe(fileURL: url, config: config)
+                let transcript = try await AIClient.transcribe(fileURL: url, config: config)
+                let raw = transcript.text
                 var clean = raw
                 var cleanupError: String? = nil
                 if item.isCommand {
@@ -219,7 +235,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
                     guard let source = item.sourceText, !source.isEmpty else { throw AIError("No text was selected") }
                     guard !raw.isEmpty else { throw AIError("Didn't catch the instruction") }
                     clean = try await AIClient.command(selection: source, instruction: raw, config: config)
-                } else if config.cleanupEnabled && !raw.isEmpty {
+                } else if (config.cleanupEnabled || translating) && !raw.isEmpty {   // translation needs the writing model
                     do {
                         clean = try await AIClient.cleanup(raw, context: context, config: config)
                     } catch {
@@ -235,7 +251,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
                     $0.cleanupError = cleanupError
                     $0.processingMs = ms
                     $0.sttModel = config.sttModel
-                    $0.llmModel = (item.isCommand || config.cleanupEnabled) ? config.llmModel : nil
+                    $0.llmModel = (item.isCommand || config.cleanupEnabled || translating) ? config.llmModel : nil
+                    $0.detectedLanguage = transcript.language
                 }
 
                 if paste {
@@ -256,7 +273,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         let front = NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? ""
         if !Permissions.accessibilityGranted {
             Paster.copy(text)
-            overlay.error("Copied. Turn on Accessibility so Utter can paste")
+            overlay.error("Copied. Turn on Accessibility so Tellr can paste")
         } else if front != intendedBundleID && !intendedBundleID.isEmpty {
             // You switched apps while it was processing — don't paste into the wrong place.
             Paster.copy(text)
@@ -282,7 +299,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             let online = path.status == .satisfied
             Task { @MainActor in self?.networkChanged(online: online) }
         }
-        pathMonitor.start(queue: DispatchQueue(label: "utter.network"))
+        pathMonitor.start(queue: DispatchQueue(label: "tellr.network"))
     }
 
     private func networkChanged(online: Bool) {
@@ -304,14 +321,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private func updateIcon() {
         let image: NSImage?
         if session != nil {
-            image = NSImage(systemSymbolName: "waveform.circle.fill", accessibilityDescription: "Utter — recording")
+            image = NSImage(systemSymbolName: "waveform.circle.fill", accessibilityDescription: "Tellr — recording")
         } else if history.failedCount > 0 {
-            image = NSImage(systemSymbolName: "exclamationmark.bubble", accessibilityDescription: "Utter — failed dictations")
+            image = NSImage(systemSymbolName: "exclamationmark.bubble", accessibilityDescription: "Tellr — failed dictations")
         } else if let brand = NSImage(named: "MenuBarIcon") {
             brand.size = NSSize(width: 18, height: 18)
             image = brand
         } else {
-            image = NSImage(systemSymbolName: "waveform", accessibilityDescription: "Utter")
+            image = NSImage(systemSymbolName: "waveform", accessibilityDescription: "Tellr")
         }
         image?.isTemplate = true
         statusItem?.button?.image = image
@@ -330,7 +347,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             menu.addItem(item("⚠︎ Add your API key…", #selector(openSettings)))
         }
         menu.addItem(.separator())
-        menu.addItem(item("Open Utter", #selector(openHome), key: "o"))
+        menu.addItem(item("Open Tellr", #selector(openHome), key: "o"))
         menu.addItem(item("History", #selector(openHistory), key: "h"))
         let failed = history.failedCount
         if failed > 0 {
@@ -338,7 +355,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         }
         menu.addItem(item("Settings…", #selector(openSettings), key: ","))
         menu.addItem(.separator())
-        let quit = NSMenuItem(title: "Quit Utter", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        let quit = NSMenuItem(title: "Quit Tellr", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         quit.target = NSApp
         menu.addItem(quit)
     }
@@ -365,7 +382,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             let w = NSWindow(contentRect: NSRect(origin: .zero, size: size),
                              styleMask: [.titled, .closable, .resizable, .miniaturizable, .fullSizeContentView],
                              backing: .buffered, defer: false)
-            w.title = "Utter"
+            w.title = "Tellr"
             w.titleVisibility = .hidden
             w.titlebarAppearsTransparent = true
             w.isMovableByWindowBackground = true

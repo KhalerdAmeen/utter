@@ -1,7 +1,7 @@
 import AppKit
 import UniformTypeIdentifiers
 
-/// One portable file with everything that makes Utter "yours".
+/// One portable file with everything that makes Tellr "yours".
 struct BackupFile: Codable {
     var app: String
     var version: Int
@@ -27,14 +27,14 @@ enum Backup {
     static func export(settings: AppSettings, store: HistoryStore) {
         let stamp = Date().formatted(.iso8601.year().month().day())
         let panel = NSSavePanel()
-        panel.title = "Export Utter backup"
-        panel.nameFieldStringValue = "Utter Backup \(stamp).json"
+        panel.title = "Export Tellr backup"
+        panel.nameFieldStringValue = "Tellr Backup \(stamp).json"
         panel.allowedContentTypes = [.json]
         NSApp.activate(ignoringOtherApps: true)
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
         let file = BackupFile(
-            app: "Utter", version: 1, exportedAt: Date(),
+            app: "Tellr", version: 1, exportedAt: Date(),
             vocabulary: settings.vocabulary, snippets: settings.snippets, tones: settings.tones,
             hotkey: settings.hotkey.rawValue, language: settings.language,
             cleanupEnabled: settings.cleanupEnabled, keepOnClipboard: settings.keepOnClipboard,
@@ -55,7 +55,7 @@ enum Backup {
 
     static func importFile(settings: AppSettings, store: HistoryStore) {
         let panel = NSOpenPanel()
-        panel.title = "Import Utter backup"
+        panel.title = "Import Tellr backup"
         panel.allowedContentTypes = [.json]
         panel.allowsMultipleSelection = false
         NSApp.activate(ignoringOtherApps: true)
@@ -65,7 +65,7 @@ enum Backup {
             let dec = JSONDecoder()
             dec.dateDecodingStrategy = .iso8601
             let file = try dec.decode(BackupFile.self, from: Data(contentsOf: url))
-            guard file.app == "Utter" else { throw AIError("That file isn't an Utter backup") }
+            guard file.app == "Tellr" || file.app == "Utter" else { throw AIError("That file isn't a Tellr backup") }
 
             // Dictionary: union, no duplicates
             var words = settings.vocabularyList
