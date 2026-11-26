@@ -2,7 +2,7 @@
 
 **Just talk. Tellr writes it.** Hold a key in any Mac app, talk in any language, and Tellr types polished text where your cursor is. It removes the ums, applies your self-corrections, fixes punctuation, and can translate as you go.
 
-**[Download for Mac →](https://github.com/KhalerdAmeen/tellr/releases/latest/download/Tellr.dmg)** · [Website](https://getutter.vercel.app)
+**[Download for Mac →](https://github.com/KhalerdAmeen/tellr/releases/latest/download/Tellr.dmg)** · [Website](https://heytellr.vercel.app)
 
 Free · macOS 13 or later · Apple Silicon and Intel · Signed and notarized by Apple
 
