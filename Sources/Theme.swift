@@ -54,11 +54,12 @@ struct Page<Content: View>: View {
                     .padding(.top, 6)
                 content.padding(.top, 10)
             }
-            .padding(.horizontal, 36)
+            .padding(.horizontal, 40)
             .padding(.top, 52)
             .padding(.bottom, 40)
-            .frame(maxWidth: 740, alignment: .leading)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            // Grow with the window; only on very wide screens stop at a comfortable width and centre.
+            .frame(maxWidth: 1180, alignment: .leading)
+            .frame(maxWidth: .infinity)
         }
         .background(
             ZStack(alignment: .topTrailing) {
