@@ -415,7 +415,7 @@ struct PermissionRow: View {
             IconTile(symbol: title == "Microphone" ? "mic.fill" : "hand.raised.fill",
                      tint: granted ? Theme.green : Theme.warning)
             VStack(alignment: .leading, spacing: 1) {
-                Text(title).font(.system(size: 13, weight: .medium)).foregroundStyle(Color.white)
+                Text(title).font(.system(size: 13, weight: .medium)).foregroundStyle(Theme.text)
                 Text(detail).font(.system(size: 11.5)).foregroundStyle(Theme.textDim)
             }
             Spacer()

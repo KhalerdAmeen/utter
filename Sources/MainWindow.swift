@@ -64,7 +64,7 @@ struct MainView: View {
         }
         .frame(minWidth: 780, minHeight: 540)
         .tint(Theme.accent)
-        .environment(\.colorScheme, .dark)
+        .environment(\.colorScheme, .light)
         .ignoresSafeArea()
     }
 }
@@ -81,9 +81,9 @@ struct Sidebar: View {
                     .resizable()
                     .interpolation(.high)
                     .frame(width: 32, height: 32)
-                    .shadow(color: Theme.accent.opacity(0.35), radius: 8, y: 2)
+                    .shadow(color: .black.opacity(0.10), radius: 4, y: 1)
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("Tellr").font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.white)
+                    Text("Tellr").font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.text)
                     Text("Just talk.").font(.system(size: 11, design: .serif)).italic().foregroundStyle(Theme.textDim)
                 }
             }
@@ -110,7 +110,7 @@ struct Sidebar: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.white.opacity(0.035))
+                    .fill(Color.white)
                     .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.hairline))
             )
         }
@@ -151,7 +151,7 @@ struct SidebarButton: View {
                     .foregroundStyle(selected ? Theme.accent : Theme.textDim)
                 Text(tab.title)
                     .font(.system(size: 13, weight: selected ? .semibold : .regular))
-                    .foregroundStyle(selected ? Color.white : Color.white.opacity(0.75))
+                    .foregroundStyle(selected ? Theme.text : Theme.text.opacity(0.72))
                 Spacer()
                 if let badge {
                     Text("\(badge)")
@@ -166,9 +166,9 @@ struct SidebarButton: View {
             .background(
                 RoundedRectangle(cornerRadius: 9, style: .continuous)
                     .fill(selected
-                          ? AnyShapeStyle(LinearGradient(colors: [Theme.accent.opacity(0.20), Theme.accent.opacity(0.08)],
+                          ? AnyShapeStyle(LinearGradient(colors: [Theme.accent.opacity(0.13), Theme.accent.opacity(0.05)],
                                                          startPoint: .leading, endPoint: .trailing))
-                          : AnyShapeStyle(Color.white.opacity(hovering ? 0.05 : 0)))
+                          : AnyShapeStyle(Color.black.opacity(hovering ? 0.04 : 0)))
             )
             .overlay(alignment: .leading) {
                 if selected {
@@ -265,7 +265,7 @@ struct Banner: View {
     var body: some View {
         HStack(spacing: 12) {
             IconTile(symbol: icon, tint: Theme.warning, size: 26)
-            Text(text).font(.system(size: 12.5, weight: .medium)).foregroundStyle(Color.white)
+            Text(text).font(.system(size: 12.5, weight: .medium)).foregroundStyle(Theme.text)
             Spacer()
             Button(button, action: action).controlSize(.small)
         }
@@ -282,9 +282,9 @@ struct HeroCard: View {
         HStack(alignment: .center, spacing: 22) {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(spacing: 10) {
-                    Text("Hold").font(.system(size: 22, design: .serif)).foregroundStyle(Color.white)
+                    Text("Hold").font(.system(size: 22, design: .serif)).foregroundStyle(Theme.text)
                     BigKeycap(label: settings.hotkey.keycap, caption: settings.hotkey == .fn ? "" : "right")
-                    Text("and talk.").font(.system(size: 22, design: .serif)).foregroundStyle(Color.white)
+                    Text("and talk.").font(.system(size: 22, design: .serif)).foregroundStyle(Theme.text)
                 }
                 HStack(spacing: 18) {
                     ShortcutHint(keys: ["⇧", settings.hotkey.keycap], text: "rewrite selection")
@@ -296,14 +296,14 @@ struct HeroCard: View {
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable().interpolation(.high)
                 .frame(width: 68, height: 68)
-                .shadow(color: Theme.accent.opacity(0.45), radius: 18)
+                .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
         }
         .padding(22)
         .background(
             ZStack {
                 CardBackground(radius: 16)
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(RadialGradient(colors: [Theme.accent.opacity(0.22), .clear],
+                    .fill(RadialGradient(colors: [Theme.accent.opacity(0.08), .clear],
                                          center: .trailing, startRadius: 0, endRadius: 260))
             }
         )
@@ -320,16 +320,14 @@ struct BigKeycap: View {
                 Text(caption).font(.system(size: 8.5, weight: .medium)).foregroundStyle(Theme.textDim)
             }
         }
-        .foregroundStyle(Color.white)
+        .foregroundStyle(Theme.text)
         .frame(width: 46, height: 40)
         .background(
             RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .fill(LinearGradient(colors: [Color.white.opacity(0.20), Color.white.opacity(0.07)],
-                                     startPoint: .top, endPoint: .bottom))
+                .fill(Color.white)
         )
-        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(Color.white.opacity(0.16)))
-        .shadow(color: .black.opacity(0.6), radius: 0, y: 2.5)
-        .shadow(color: Theme.accent.opacity(0.25), radius: 10)
+        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(Color.black.opacity(0.13)))
+        .shadow(color: .black.opacity(0.12), radius: 0, y: 2.5)
     }
 }
 
@@ -345,7 +343,7 @@ struct StatCard: View {
                 Text(value)
                     .font(.system(size: 26, weight: .regular, design: .serif))
                     .monospacedDigit()
-                    .foregroundStyle(Color.white)
+                    .foregroundStyle(Theme.text)
                 Text(label).font(.system(size: 11.5)).foregroundStyle(Theme.textDim)
             }
         }

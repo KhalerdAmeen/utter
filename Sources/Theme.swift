@@ -10,14 +10,16 @@ enum Theme {
     static let warning = Color(red: 1.0, green: 0.72, blue: 0.20)
     static let pill = Color(red: 0.07, green: 0.07, blue: 0.08)
 
-    static let bg = Color(red: 0.055, green: 0.055, blue: 0.063)        // window
-    static let sidebar = Color(red: 0.075, green: 0.075, blue: 0.083)   // sidebar
-    static let surface = Color(red: 0.098, green: 0.098, blue: 0.110)   // cards
-    static let surfaceHi = Color(red: 0.125, green: 0.125, blue: 0.140) // top of card gradient
+    // Light theme: warm off-white window, white cards, near-black text
+    static let bg = Color(red: 0.980, green: 0.976, blue: 0.969)        // #FAF9F7 window
+    static let sidebar = Color(red: 0.957, green: 0.953, blue: 0.945)   // #F4F3F1 sidebar
+    static let surface = Color.white                                    // cards
+    static let surfaceHi = Color.white
     static let cardFill = surface
-    static let hairline = Color.white.opacity(0.07)
-    static let textDim = Color.white.opacity(0.55)
-    static let accentSoft = accent.opacity(0.14)
+    static let text = Color(red: 0.071, green: 0.071, blue: 0.078)      // #121214
+    static let hairline = Color.black.opacity(0.08)
+    static let textDim = Color.black.opacity(0.52)
+    static let accentSoft = accent.opacity(0.10)
 
     // Icon tile colours for settings rows (System Settings style, toned for dark)
     static let blue = Color(red: 0.26, green: 0.52, blue: 0.98)
@@ -45,7 +47,7 @@ struct Page<Content: View>: View {
                 Text(title)
                     .font(.system(size: 34, weight: .regular, design: .serif))
                     .tracking(-0.6)
-                    .foregroundStyle(Color.white)
+                    .foregroundStyle(Theme.text)
                 Text(subtitle)
                     .font(.system(size: 13))
                     .foregroundStyle(Theme.textDim)
@@ -65,7 +67,7 @@ struct Page<Content: View>: View {
             ZStack(alignment: .topTrailing) {
                 Theme.bg
                 // the soft orange glow from the website
-                RadialGradient(colors: [Theme.accent.opacity(0.13), .clear],
+                RadialGradient(colors: [Theme.accent.opacity(0.06), .clear],
                                center: .topTrailing, startRadius: 0, endRadius: 460)
             }
             .ignoresSafeArea()
@@ -112,7 +114,7 @@ struct CardBackground: View {
         RoundedRectangle(cornerRadius: radius, style: .continuous)
             .fill(LinearGradient(colors: [Theme.surfaceHi, Theme.surface], startPoint: .top, endPoint: .bottom))
             .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(Theme.hairline))
-            .shadow(color: .black.opacity(0.28), radius: 12, y: 5)
+            .shadow(color: .black.opacity(0.04), radius: 6, y: 2)
     }
 }
 
@@ -123,14 +125,13 @@ struct IconTile: View {
     var size: CGFloat = 28
     var body: some View {
         RoundedRectangle(cornerRadius: size * 0.26, style: .continuous)
-            .fill(LinearGradient(colors: [tint, tint.opacity(0.72)], startPoint: .top, endPoint: .bottom))
+            .fill(tint.opacity(0.12))
             .frame(width: size, height: size)
             .overlay(
                 Image(systemName: symbol)
                     .font(.system(size: size * 0.46, weight: .semibold))
-                    .foregroundStyle(Color.white)
+                    .foregroundStyle(tint)
             )
-            .shadow(color: tint.opacity(0.35), radius: 6, y: 2)
     }
 }
 
@@ -140,16 +141,15 @@ struct Keycap: View {
     var body: some View {
         Text(label)
             .font(.system(size: 11.5, weight: .semibold, design: .rounded))
-            .foregroundStyle(Color.white.opacity(0.92))
+            .foregroundStyle(Theme.text)
             .padding(.horizontal, 6)
             .frame(minWidth: 22, minHeight: 22)
             .background(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(LinearGradient(colors: [Color.white.opacity(0.17), Color.white.opacity(0.07)],
-                                         startPoint: .top, endPoint: .bottom))
+                    .fill(Color.white)
             )
-            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Color.white.opacity(0.14)))
-            .shadow(color: .black.opacity(0.55), radius: 0, y: 1.5)
+            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Color.black.opacity(0.13)))
+            .shadow(color: .black.opacity(0.10), radius: 0, y: 1.5)
     }
 }
 
@@ -181,7 +181,7 @@ struct SettingRow<Control: View>: View {
                 IconTile(symbol: icon, tint: tint)
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.system(size: 13, weight: .medium)).foregroundStyle(Color.white)
+                Text(title).font(.system(size: 13, weight: .medium)).foregroundStyle(Theme.text)
                 if let subtitle {
                     Text(subtitle)
                         .font(.system(size: 11.5))
