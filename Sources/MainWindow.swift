@@ -47,8 +47,8 @@ struct MainView: View {
     var body: some View {
         HStack(spacing: 0) {
             Sidebar(nav: nav, settings: settings, store: store)
-                .frame(width: 200)
-            Divider()
+                .frame(width: 216)
+            Rectangle().fill(Theme.hairline).frame(width: 1)
             Group {
                 switch nav.tab {
                 case .home: HomePage(nav: nav, settings: settings, store: store, actions: actions)
@@ -60,9 +60,11 @@ struct MainView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(nsColor: .windowBackgroundColor))
+            .background(Theme.bg)
         }
-        .frame(minWidth: 760, minHeight: 520)
+        .frame(minWidth: 780, minHeight: 540)
+        .tint(Theme.accent)
+        .environment(\.colorScheme, .dark)
         .ignoresSafeArea()
     }
 }
@@ -73,17 +75,21 @@ struct Sidebar: View {
     @ObservedObject var store: HistoryStore
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: 9) {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 10) {
                 Image(nsImage: NSApp.applicationIconImage)
                     .resizable()
                     .interpolation(.high)
-                    .frame(width: 30, height: 30)
-                Text("Tellr").font(.system(size: 15, weight: .semibold))
+                    .frame(width: 32, height: 32)
+                    .shadow(color: Theme.accent.opacity(0.35), radius: 8, y: 2)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Tellr").font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.white)
+                    Text("Just talk.").font(.system(size: 11, design: .serif)).italic().foregroundStyle(Theme.textDim)
+                }
             }
             .padding(.leading, 8)
-            .padding(.top, 48)
-            .padding(.bottom, 20)
+            .padding(.top, 50)
+            .padding(.bottom, 22)
 
             ForEach(Tab.allCases) { tab in
                 SidebarButton(tab: tab, selected: nav.tab == tab,
@@ -94,35 +100,38 @@ struct Sidebar: View {
 
             Spacer()
 
-            VStack(alignment: .leading, spacing: 8) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Hold \(settings.hotkey.short)")
-                        .font(.system(size: 12, weight: .semibold))
-                    Text("to dictate anywhere")
-                        .font(.system(size: 11.5)).foregroundStyle(.secondary)
-                }
-                Divider()
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("⇧ Shift + \(settings.hotkey.short)")
-                        .font(.system(size: 12, weight: .semibold))
-                    Text("to edit selected text")
-                        .font(.system(size: 11.5)).foregroundStyle(.secondary)
-                }
-                Divider()
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("⌃ Control + \(settings.hotkey.short)")
-                        .font(.system(size: 12, weight: .semibold))
-                    Text("to translate to \(LanguageOption.name(for: settings.quickTranslateLanguage))")
-                        .font(.system(size: 11.5)).foregroundStyle(.secondary)
-                }
+            VStack(alignment: .leading, spacing: 10) {
+                ShortcutHint(keys: [settings.hotkey.keycap], text: "Hold to dictate")
+                ShortcutHint(keys: ["⇧", settings.hotkey.keycap], text: "Rewrite selection")
+                ShortcutHint(keys: ["⌃", settings.hotkey.keycap],
+                             text: "Translate → \(LanguageOption.name(for: settings.quickTranslateLanguage))")
             }
-            .padding(12)
+            .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.primary.opacity(0.05)))
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.white.opacity(0.035))
+                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.hairline))
+            )
         }
         .padding(12)
         .frame(maxHeight: .infinity, alignment: .top)
-        .background(VisualEffect(material: .sidebar))
+        .background(Theme.sidebar)
+    }
+}
+
+struct ShortcutHint: View {
+    let keys: [String]
+    let text: String
+    var body: some View {
+        HStack(spacing: 8) {
+            KeyCombo(keys: keys)
+            Text(text)
+                .font(.system(size: 11.5))
+                .foregroundStyle(Theme.textDim)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+        }
     }
 }
 
@@ -139,27 +148,38 @@ struct SidebarButton: View {
                 Image(systemName: tab.icon)
                     .font(.system(size: 13, weight: .medium))
                     .frame(width: 18)
-                    .foregroundStyle(selected ? Theme.accent : Color.secondary)
-                Text(tab.title).font(.system(size: 13, weight: selected ? .semibold : .regular))
+                    .foregroundStyle(selected ? Theme.accent : Theme.textDim)
+                Text(tab.title)
+                    .font(.system(size: 13, weight: selected ? .semibold : .regular))
+                    .foregroundStyle(selected ? Color.white : Color.white.opacity(0.75))
                 Spacer()
                 if let badge {
                     Text("\(badge)")
                         .font(.system(size: 10.5, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Theme.pill)
                         .padding(.horizontal, 6).padding(.vertical, 1)
                         .background(Capsule().fill(Theme.warning))
                 }
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 7)
+            .padding(.vertical, 8)
             .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.primary.opacity(selected ? 0.08 : (hovering ? 0.04 : 0)))
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .fill(selected
+                          ? AnyShapeStyle(LinearGradient(colors: [Theme.accent.opacity(0.20), Theme.accent.opacity(0.08)],
+                                                         startPoint: .leading, endPoint: .trailing))
+                          : AnyShapeStyle(Color.white.opacity(hovering ? 0.05 : 0)))
             )
+            .overlay(alignment: .leading) {
+                if selected {
+                    Capsule().fill(Theme.accent).frame(width: 3, height: 16).offset(x: -1)
+                }
+            }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
+        .animation(.easeOut(duration: 0.15), value: selected)
     }
 }
 
@@ -181,7 +201,10 @@ struct HomePage: View {
     }
 
     var body: some View {
-        Page(title: greeting, subtitle: "Hold \(settings.hotkey.label) in any app and just talk. Quick tap for hands-free. Select text and hold Shift too to rewrite it by voice. Hold Control too to translate.") {
+        Page(title: greeting, subtitle: "Talk in any app. Tellr writes it, cleans it up, and pastes it where your cursor is.") {
+            HeroCard(settings: settings)
+                .padding(.top, 18)
+
             VStack(spacing: 10) {
                 if settings.apiKey.isEmpty {
                     Banner(icon: "key.fill", text: "Add your Groq API key to start dictating.", button: "Open Settings") { nav.tab = .settings }
@@ -196,9 +219,9 @@ struct HomePage: View {
             .padding(.top, 14)
 
             HStack(spacing: 12) {
-                StatCard(value: "\(store.totalWords)", label: "words dictated")
-                StatCard(value: "\(store.items.count)", label: "dictations")
-                StatCard(value: formatDuration(store.timeSavedSeconds), label: "saved vs typing")
+                StatCard(icon: "text.word.spacing", tint: Theme.accent, value: "\(store.totalWords)", label: "words dictated")
+                StatCard(icon: "waveform", tint: Theme.purple, value: "\(store.items.count)", label: "dictations")
+                StatCard(icon: "bolt.fill", tint: Theme.green, value: formatDuration(store.timeSavedSeconds), label: "saved vs typing")
             }
             .padding(.top, 14)
 
@@ -240,30 +263,95 @@ struct Banner: View {
     let button: String
     let action: () -> Void
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon).font(.system(size: 12)).foregroundStyle(Theme.warning)
-            Text(text).font(.system(size: 12.5, weight: .medium))
+        HStack(spacing: 12) {
+            IconTile(symbol: icon, tint: Theme.warning, size: 26)
+            Text(text).font(.system(size: 12.5, weight: .medium)).foregroundStyle(Color.white)
             Spacer()
             Button(button, action: action).controlSize(.small)
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.warning.opacity(0.12)))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.warning.opacity(0.3)))
+        .padding(.horizontal, 14).padding(.vertical, 11)
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Theme.warning.opacity(0.09)))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.warning.opacity(0.28)))
+    }
+}
+
+/// The "how to use it" card at the top of Home, with keycaps.
+struct HeroCard: View {
+    @ObservedObject var settings: AppSettings
+    var body: some View {
+        HStack(alignment: .center, spacing: 22) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 10) {
+                    Text("Hold").font(.system(size: 22, design: .serif)).foregroundStyle(Color.white)
+                    BigKeycap(label: settings.hotkey.keycap, caption: settings.hotkey == .fn ? "" : "right")
+                    Text("and talk.").font(.system(size: 22, design: .serif)).foregroundStyle(Color.white)
+                }
+                HStack(spacing: 18) {
+                    ShortcutHint(keys: ["⇧", settings.hotkey.keycap], text: "rewrite selection")
+                    ShortcutHint(keys: ["⌃", settings.hotkey.keycap],
+                                 text: "translate → \(LanguageOption.name(for: settings.quickTranslateLanguage))")
+                }
+            }
+            Spacer(minLength: 0)
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable().interpolation(.high)
+                .frame(width: 68, height: 68)
+                .shadow(color: Theme.accent.opacity(0.45), radius: 18)
+        }
+        .padding(22)
+        .background(
+            ZStack {
+                CardBackground(radius: 16)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(RadialGradient(colors: [Theme.accent.opacity(0.22), .clear],
+                                         center: .trailing, startRadius: 0, endRadius: 260))
+            }
+        )
+    }
+}
+
+struct BigKeycap: View {
+    let label: String
+    var caption: String = ""
+    var body: some View {
+        VStack(spacing: 1) {
+            Text(label).font(.system(size: 17, weight: .semibold, design: .rounded))
+            if !caption.isEmpty {
+                Text(caption).font(.system(size: 8.5, weight: .medium)).foregroundStyle(Theme.textDim)
+            }
+        }
+        .foregroundStyle(Color.white)
+        .frame(width: 46, height: 40)
+        .background(
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .fill(LinearGradient(colors: [Color.white.opacity(0.20), Color.white.opacity(0.07)],
+                                     startPoint: .top, endPoint: .bottom))
+        )
+        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(Color.white.opacity(0.16)))
+        .shadow(color: .black.opacity(0.6), radius: 0, y: 2.5)
+        .shadow(color: Theme.accent.opacity(0.25), radius: 10)
     }
 }
 
 struct StatCard: View {
+    let icon: String
+    let tint: Color
     let value: String
     let label: String
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(value).font(.system(size: 24, weight: .semibold, design: .rounded)).monospacedDigit()
-            Text(label).font(.system(size: 11.5)).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 10) {
+            IconTile(symbol: icon, tint: tint, size: 26)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(value)
+                    .font(.system(size: 26, weight: .regular, design: .serif))
+                    .monospacedDigit()
+                    .foregroundStyle(Color.white)
+                Text(label).font(.system(size: 11.5)).foregroundStyle(Theme.textDim)
+            }
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Theme.cardFill))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.hairline))
+        .background(CardBackground())
     }
 }
 
@@ -429,10 +517,10 @@ struct DictationCard: View {
                 ChipButton(icon: "trash", title: nil) { store.delete(item.id) }
             }
         }
-        .padding(14)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Theme.cardFill))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .strokeBorder(item.status == .failed ? Theme.record.opacity(0.35) : Theme.hairline))
+        .padding(16)
+        .background(CardBackground())
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .strokeBorder(item.status == .failed ? Theme.record.opacity(0.45) : Color.clear))
     }
 
     private var dot: some View { Text("·") }

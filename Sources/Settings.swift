@@ -50,6 +50,15 @@ enum Hotkey: String, CaseIterable, Identifiable {
         }
     }
 
+    /// The symbol shown on a keycap.
+    var keycap: String {
+        switch self {
+        case .rightOption: return "⌥"
+        case .fn: return "fn"
+        case .rightCommand: return "⌘"
+        }
+    }
+
     var keyCode: UInt16 {
         switch self {
         case .rightOption: return 61
@@ -201,11 +210,11 @@ struct SettingsPage: View {
         Page(title: "Settings", subtitle: "Tune how Tellr listens, writes and stores your dictations.") {
             SectionLabel("General")
             Card {
-                SettingRow(title: "Always show in Dock", subtitle: "Tellr lives in the menu bar. It appears in the Dock while its window is open; turn this on to keep it there.") {
+                SettingRow(title: "Always show in Dock", subtitle: "Tellr lives in the menu bar. It appears in the Dock while its window is open; turn this on to keep it there.", icon: "dock.rectangle", tint: Theme.gray) {
                     Toggle("", isOn: $settings.alwaysShowInDock).toggleStyle(.switch).labelsHidden()
                 }
                 Divider()
-                SettingRow(title: "Dictation key", subtitle: "Hold to talk, release to paste. Quick tap for hands-free, tap again to finish. Esc cancels. Hold Shift too to edit selected text by voice, or Control to translate.") {
+                SettingRow(title: "Dictation key", subtitle: "Hold to talk, release to paste. Quick tap for hands-free, tap again to finish. Esc cancels. Hold Shift too to edit selected text by voice, or Control to translate.", icon: "keyboard", tint: Theme.accent) {
                     Picker("", selection: $settings.hotkey) {
                         ForEach(Hotkey.allCases) { Text($0.short).tag($0) }
                     }
@@ -223,7 +232,7 @@ struct SettingsPage: View {
             Group {
                 SectionLabel("Languages")
                 Card {
-                    SettingRow(title: "I speak", subtitle: "Auto-detect lets you switch languages freely. Picking one is a little faster and more accurate.") {
+                    SettingRow(title: "I speak", subtitle: "Auto-detect lets you switch languages freely. Picking one is a little faster and more accurate.", icon: "mic.fill", tint: Theme.blue) {
                         Picker("", selection: $settings.language) {
                             Text("Auto-detect").tag("")
                             ForEach(LanguageOption.all) { Text($0.name).tag($0.code) }
@@ -231,7 +240,7 @@ struct SettingsPage: View {
                         .labelsHidden().frame(width: 180)
                     }
                     Divider()
-                    SettingRow(title: "Type in", subtitle: "Speak any language and Tellr types in this one. “Same as I speak” keeps your words in the language you used.") {
+                    SettingRow(title: "Type in", subtitle: "Speak any language and Tellr types in this one. “Same as I speak” keeps your words in the language you used.", icon: "character.bubble", tint: Theme.purple) {
                         Picker("", selection: $settings.outputLanguage) {
                             Text("Same as I speak").tag("")
                             ForEach(LanguageOption.all) { Text($0.name).tag($0.code) }
@@ -239,7 +248,7 @@ struct SettingsPage: View {
                         .labelsHidden().frame(width: 180)
                     }
                     Divider()
-                    SettingRow(title: "Quick translate", subtitle: "Hold Control as you start a dictation to translate just that one into this language.") {
+                    SettingRow(title: "Quick translate", subtitle: "Hold Control as you start a dictation to translate just that one into this language.", icon: "globe", tint: Theme.teal) {
                         Picker("", selection: $settings.quickTranslateLanguage) {
                             ForEach(LanguageOption.all) { Text($0.name).tag($0.code) }
                         }
@@ -255,34 +264,34 @@ struct SettingsPage: View {
 
             SectionLabel("Writing")
             Card {
-                SettingRow(title: "AI cleanup", subtitle: "Removes ums, applies your self-corrections, fixes punctuation and grammar.") {
+                SettingRow(title: "AI cleanup", subtitle: "Removes ums, applies your self-corrections, fixes punctuation and grammar.", icon: "sparkles", tint: Theme.accent) {
                     Toggle("", isOn: $settings.cleanupEnabled).toggleStyle(.switch).labelsHidden()
                 }
                 Divider()
-                SettingRow(title: "Keep text on clipboard", subtitle: "After pasting, your dictation stays copied so you can paste it again.") {
+                SettingRow(title: "Keep text on clipboard", subtitle: "After pasting, your dictation stays copied so you can paste it again.", icon: "doc.on.clipboard", tint: Theme.gray) {
                     Toggle("", isOn: $settings.keepOnClipboard).toggleStyle(.switch).labelsHidden()
                 }
                 Divider()
-                SettingRow(title: "Use on-screen context", subtitle: "Reads the text box you're typing in so names already there get spelled right. Only sent along with a dictation; never saved.") {
+                SettingRow(title: "Use on-screen context", subtitle: "Reads the text box you're typing in so names already there get spelled right. Only sent along with a dictation; never saved.", icon: "text.viewfinder", tint: Theme.blue) {
                     Toggle("", isOn: $settings.useScreenContext).toggleStyle(.switch).labelsHidden()
                 }
                 Divider()
-                SettingRow(title: "Sound effects") {
+                SettingRow(title: "Sound effects", icon: "speaker.wave.2.fill", tint: Theme.pink) {
                     Toggle("", isOn: $settings.soundsEnabled).toggleStyle(.switch).labelsHidden()
                 }
             }
 
             SectionLabel("AI provider")
             Card {
-                SettingRow(title: "Speech model", subtitle: "Turns your voice into text. Switch, then use Re-run in History to compare.") {
+                SettingRow(title: "Speech model", subtitle: "Turns your voice into text. Switch, then use Re-run in History to compare.", icon: "waveform", tint: Theme.purple) {
                     ModelPicker(selection: $settings.sttModel, presets: AppSettings.sttPresets)
                 }
                 Divider()
-                SettingRow(title: "Writing model", subtitle: "Cleans up your text and powers command mode.") {
+                SettingRow(title: "Writing model", subtitle: "Cleans up your text and powers command mode.", icon: "wand.and.stars", tint: Theme.accent) {
                     ModelPicker(selection: $settings.llmModel, presets: AppSettings.llmPresets)
                 }
                 Divider()
-                SettingRow(title: "Groq API key", subtitle: settings.apiKey.isEmpty ? "Required. Free, no card needed." : "Stored securely in your Keychain.") {
+                SettingRow(title: "Groq API key", subtitle: settings.apiKey.isEmpty ? "Required. Free, no card needed." : "Stored securely in your Keychain.", icon: "key.fill", tint: Theme.green) {
                     SecureField("gsk_…", text: $settings.apiKey)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 240)
@@ -313,18 +322,18 @@ struct SettingsPage: View {
             Group {
                 SectionLabel("Storage")
                 Card {
-                    SettingRow(title: "Keep recordings", subtitle: "Audio is saved before it's sent, so nothing is lost if your connection drops.") {
+                    SettingRow(title: "Keep recordings", subtitle: "Audio is saved before it's sent, so nothing is lost if your connection drops.", icon: "clock.arrow.circlepath", tint: Theme.blue) {
                         Picker("", selection: $settings.retentionDays) {
                             ForEach(retention, id: \.self) { Text($0 == 0 ? "Forever" : "\($0) days").tag($0) }
                         }
                         .labelsHidden().frame(width: 120)
                     }
                     Divider()
-                    SettingRow(title: "Recordings folder") {
+                    SettingRow(title: "Recordings folder", icon: "folder.fill", tint: Theme.teal) {
                         Button("Open in Finder") { NSWorkspace.shared.open(store.audioDir) }
                     }
                     Divider()
-                    SettingRow(title: "Backup", subtitle: "Dictionary, snippets, style, settings and history text in one file. Audio and your API key aren't included.") {
+                    SettingRow(title: "Backup", subtitle: "Dictionary, snippets, style, settings and history text in one file. Audio and your API key aren't included.", icon: "externaldrive.fill", tint: Theme.gray) {
                         HStack(spacing: 8) {
                             Button("Export…") { Backup.export(settings: settings, store: store) }
                             Button("Import…") { Backup.importFile(settings: settings, store: store) }
@@ -402,15 +411,17 @@ struct PermissionRow: View {
     let granted: Bool
     let fix: () -> Void
     var body: some View {
-        HStack(spacing: 10) {
-            Circle().fill(granted ? Theme.success : Theme.warning).frame(width: 8, height: 8)
+        HStack(spacing: 12) {
+            IconTile(symbol: title == "Microphone" ? "mic.fill" : "hand.raised.fill",
+                     tint: granted ? Theme.green : Theme.warning)
             VStack(alignment: .leading, spacing: 1) {
-                Text(title).font(.system(size: 13, weight: .medium))
-                Text(detail).font(.system(size: 11.5)).foregroundStyle(.secondary)
+                Text(title).font(.system(size: 13, weight: .medium)).foregroundStyle(Color.white)
+                Text(detail).font(.system(size: 11.5)).foregroundStyle(Theme.textDim)
             }
             Spacer()
             if granted {
-                Text("Granted").font(.system(size: 12)).foregroundStyle(.secondary)
+                Label("Granted", systemImage: "checkmark.circle.fill")
+                    .font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.success)
             } else {
                 Button("Grant access", action: fix)
             }

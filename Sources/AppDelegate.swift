@@ -386,9 +386,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             w.titleVisibility = .hidden
             w.titlebarAppearsTransparent = true
             w.isMovableByWindowBackground = true
+            w.appearance = NSAppearance(named: .darkAqua)   // brand look: always dark, like the icon and site
+            w.backgroundColor = NSColor(red: 0.055, green: 0.055, blue: 0.063, alpha: 1)
             w.contentViewController = NSHostingController(rootView: view)
             w.setContentSize(size)
-            w.minSize = NSSize(width: 760, height: 520)
+            w.minSize = NSSize(width: 780, height: 540)
             w.isReleasedWhenClosed = false
             w.delegate = self
             w.center()

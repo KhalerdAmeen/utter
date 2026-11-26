@@ -3,13 +3,29 @@ import AVFoundation
 import SwiftUI
 
 enum Theme {
-    static let accent = Color(red: 1.0, green: 0.38, blue: 0.16)      // signal orange
+    // Brand: near-black + signal orange, same as the icon and the website
+    static let accent = Color(red: 1.0, green: 0.38, blue: 0.16)      // #FF6129
     static let record = Color(red: 1.0, green: 0.27, blue: 0.23)
     static let success = Color(red: 0.24, green: 0.80, blue: 0.48)
     static let warning = Color(red: 1.0, green: 0.72, blue: 0.20)
     static let pill = Color(red: 0.07, green: 0.07, blue: 0.08)
-    static let cardFill = Color(nsColor: .controlBackgroundColor)
-    static let hairline = Color.primary.opacity(0.08)
+
+    static let bg = Color(red: 0.055, green: 0.055, blue: 0.063)        // window
+    static let sidebar = Color(red: 0.075, green: 0.075, blue: 0.083)   // sidebar
+    static let surface = Color(red: 0.098, green: 0.098, blue: 0.110)   // cards
+    static let surfaceHi = Color(red: 0.125, green: 0.125, blue: 0.140) // top of card gradient
+    static let cardFill = surface
+    static let hairline = Color.white.opacity(0.07)
+    static let textDim = Color.white.opacity(0.55)
+    static let accentSoft = accent.opacity(0.14)
+
+    // Icon tile colours for settings rows (System Settings style, toned for dark)
+    static let blue = Color(red: 0.26, green: 0.52, blue: 0.98)
+    static let purple = Color(red: 0.58, green: 0.40, blue: 0.95)
+    static let green = Color(red: 0.20, green: 0.72, blue: 0.45)
+    static let pink = Color(red: 0.95, green: 0.35, blue: 0.55)
+    static let gray = Color(red: 0.45, green: 0.45, blue: 0.50)
+    static let teal = Color(red: 0.18, green: 0.70, blue: 0.78)
 }
 
 // MARK: - Layout building blocks
@@ -26,16 +42,33 @@ struct Page<Content: View>: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                Text(title).font(.system(size: 26, weight: .semibold)).tracking(-0.4)
-                Text(subtitle).font(.system(size: 13)).foregroundStyle(.secondary).padding(.top, 4)
-                content.padding(.top, 8)
+                Text(title)
+                    .font(.system(size: 34, weight: .regular, design: .serif))
+                    .tracking(-0.6)
+                    .foregroundStyle(Color.white)
+                Text(subtitle)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Theme.textDim)
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 6)
+                content.padding(.top, 10)
             }
-            .padding(.horizontal, 32)
-            .padding(.top, 44)
-            .padding(.bottom, 32)
-            .frame(maxWidth: 720, alignment: .leading)
+            .padding(.horizontal, 36)
+            .padding(.top, 52)
+            .padding(.bottom, 40)
+            .frame(maxWidth: 740, alignment: .leading)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .background(
+            ZStack(alignment: .topTrailing) {
+                Theme.bg
+                // the soft orange glow from the website
+                RadialGradient(colors: [Theme.accent.opacity(0.13), .clear],
+                               center: .topTrailing, startRadius: 0, endRadius: 460)
+            }
+            .ignoresSafeArea()
+        )
     }
 }
 
@@ -43,12 +76,15 @@ struct SectionLabel: View {
     let text: String
     init(_ text: String) { self.text = text }
     var body: some View {
-        Text(text.uppercased())
-            .font(.system(size: 10.5, weight: .semibold))
-            .tracking(0.8)
-            .foregroundStyle(.secondary)
-            .padding(.top, 22)
-            .padding(.bottom, 8)
+        HStack(spacing: 7) {
+            Circle().fill(Theme.accent).frame(width: 5, height: 5)
+            Text(text.uppercased())
+                .font(.system(size: 10.5, weight: .semibold))
+                .tracking(1.0)
+                .foregroundStyle(Theme.textDim)
+        }
+        .padding(.top, 26)
+        .padding(.bottom, 10)
     }
 }
 
@@ -64,24 +100,91 @@ struct Card<Content: View>: View {
             .padding(.horizontal, padding)
             .padding(.vertical, padding > 0 ? 4 : 0)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Theme.cardFill))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.hairline))
+            .background(CardBackground())
+    }
+}
+
+/// Raised dark surface: subtle top-lit gradient, hairline border, soft shadow.
+struct CardBackground: View {
+    var radius: CGFloat = 14
+    var body: some View {
+        RoundedRectangle(cornerRadius: radius, style: .continuous)
+            .fill(LinearGradient(colors: [Theme.surfaceHi, Theme.surface], startPoint: .top, endPoint: .bottom))
+            .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(Theme.hairline))
+            .shadow(color: .black.opacity(0.28), radius: 12, y: 5)
+    }
+}
+
+/// Coloured rounded-square icon, like macOS System Settings.
+struct IconTile: View {
+    let symbol: String
+    var tint: Color = Theme.accent
+    var size: CGFloat = 28
+    var body: some View {
+        RoundedRectangle(cornerRadius: size * 0.26, style: .continuous)
+            .fill(LinearGradient(colors: [tint, tint.opacity(0.72)], startPoint: .top, endPoint: .bottom))
+            .frame(width: size, height: size)
+            .overlay(
+                Image(systemName: symbol)
+                    .font(.system(size: size * 0.46, weight: .semibold))
+                    .foregroundStyle(Color.white)
+            )
+            .shadow(color: tint.opacity(0.35), radius: 6, y: 2)
+    }
+}
+
+/// A physical-looking key, e.g. ⌥ or ⇧.
+struct Keycap: View {
+    let label: String
+    var body: some View {
+        Text(label)
+            .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+            .foregroundStyle(Color.white.opacity(0.92))
+            .padding(.horizontal, 6)
+            .frame(minWidth: 22, minHeight: 22)
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(LinearGradient(colors: [Color.white.opacity(0.17), Color.white.opacity(0.07)],
+                                         startPoint: .top, endPoint: .bottom))
+            )
+            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Color.white.opacity(0.14)))
+            .shadow(color: .black.opacity(0.55), radius: 0, y: 1.5)
+    }
+}
+
+/// Keys joined with small plus signs: ⇧ + ⌥
+struct KeyCombo: View {
+    let keys: [String]
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(Array(keys.enumerated()), id: \.offset) { pair in
+                if pair.offset > 0 {
+                    Text("+").font(.system(size: 10, weight: .medium)).foregroundStyle(Theme.textDim)
+                }
+                Keycap(label: pair.element)
+            }
+        }
     }
 }
 
 struct SettingRow<Control: View>: View {
     let title: String
     var subtitle: String? = nil
+    var icon: String? = nil
+    var tint: Color = Theme.accent
     @ViewBuilder var control: () -> Control
 
     var body: some View {
-        HStack(alignment: .center, spacing: 16) {
+        HStack(alignment: .center, spacing: 12) {
+            if let icon {
+                IconTile(symbol: icon, tint: tint)
+            }
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.system(size: 13, weight: .medium))
+                Text(title).font(.system(size: 13, weight: .medium)).foregroundStyle(Color.white)
                 if let subtitle {
                     Text(subtitle)
                         .font(.system(size: 11.5))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textDim)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
